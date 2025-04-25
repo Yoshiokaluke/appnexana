@@ -21,6 +21,9 @@ export default async function Home() {
             ようこそ
           </h2>
         </div>
+        <div>
+          <p>Your Clerk User ID: {userId}</p>
+        </div>
       </div>
     </div>
   );
