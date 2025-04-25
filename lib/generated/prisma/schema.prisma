@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SystemRole {
+  system_team
+}
+
+enum OrganizationRole {
+  admin
+  member
+}
+
+model User {
+  id             String                   @id @default(cuid())
+  clerkId        String                   @unique
+  email          String                   @unique
+  firstName      String?
+  lastName       String?
+  organizationId String?
+  roles          String[]
+  systemRole     SystemRole?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  memberships    OrganizationMembership[]
+  profiles       OrganizationProfile[]
+}
+
+model OrganizationMembership {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrganizationRole
+  user           User             @relation(fields: [userId], references: [id])
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([userId, organizationId])
+}
+
+model Organization {
+  id          String                   @id @default(cuid())
+  name        String
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  memberships OrganizationMembership[]
+  qrScanners  QrScanner[]
+  profiles    OrganizationProfile[]
+}
+
+model OrganizationProfile {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  displayName    String?
+  department     String?
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+}
+
+model QrScanner {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  location       String?
+  scannerId      String       @unique
+  password       String
+  lastActive     DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
