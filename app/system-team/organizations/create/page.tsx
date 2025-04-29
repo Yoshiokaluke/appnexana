@@ -22,23 +22,24 @@ export default function CreateOrganizationPage() {
       });
 
       if (!response.ok) {
-        throw new Error('組織の作成に失敗しました');
+        const errorData = await response.text();
+        throw new Error(errorData || '組織の作成に失敗しました');
       }
 
       router.push('/system-team/organizations');
       router.refresh();
     } catch (error) {
       console.error('Error:', error);
-      alert('組織の作成に失敗しました');
+      alert(error instanceof Error ? error.message : '組織の作成に失敗しました');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-6">新規組織作成</h2>
-      <form onSubmit={handleSubmit} className="max-w-md">
+    <div className="max-w-4xl mx-auto p-6">
+      <h2 className="text-2xl font-semibold mb-6">新規組織作成</h2>
+      <form onSubmit={handleSubmit} className="max-w-md bg-white shadow-sm rounded-lg p-6">
         <div className="mb-4">
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
             組織名
@@ -56,14 +57,14 @@ export default function CreateOrganizationPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? '作成中...' : '作成'}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
           >
             キャンセル
           </button>

@@ -36,6 +36,7 @@ model User {
   updatedAt        DateTime  @updatedAt
   memberships      OrganizationMembership[]
   profiles         OrganizationProfile[]
+  sentInvitations  OrganizationInvitation[] @relation("InvitedBy")
 }
 
 model OrganizationMembership {
@@ -54,11 +55,14 @@ model OrganizationMembership {
 model Organization {
   id          String    @id @default(cuid())
   name        String
+  address     String?
+  managerName String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   memberships OrganizationMembership[]
   qrScanners  QrScanner[]
   profiles    OrganizationProfile[]
+  invitations OrganizationInvitation[]
 }
 
 model OrganizationProfile {
@@ -82,9 +86,25 @@ model QrScanner {
   location       String?
   scannerId      String       @unique
   password       String
+  status         String       @default("active")
   lastActive     DateTime?
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+model OrganizationInvitation {
+  id             String           @id @default(cuid())
+  email          String
+  organizationId String
+  role           OrganizationRole @default(member)
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  expiresAt      DateTime
+  invitedBy      String
+  inviter        User             @relation("InvitedBy", fields: [invitedBy], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([email, organizationId])
 }
 
