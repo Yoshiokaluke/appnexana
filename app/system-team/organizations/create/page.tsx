@@ -5,70 +5,73 @@ import { useRouter } from 'next/navigation';
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    managerName: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
+    
     try {
       const response = await fetch('/api/organizations', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(formData)
       });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || '組織の作成に失敗しました');
+      
+      if (response.ok) {
+        router.push('/system-team/organizations');
+      } else {
+        const error = await response.json();
+        console.error('組織の作成に失敗しました:', error);
       }
-
-      router.push('/system-team/organizations');
-      router.refresh();
     } catch (error) {
       console.error('Error:', error);
-      alert(error instanceof Error ? error.message : '組織の作成に失敗しました');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-semibold mb-6">新規組織作成</h2>
-      <form onSubmit={handleSubmit} className="max-w-md bg-white shadow-sm rounded-lg p-6">
-        <div className="mb-4">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            組織名
-          </label>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">新規組織作成</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-2">組織名</label>
           <input
             type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
+            className="w-full p-2 border rounded"
           />
         </div>
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isSubmitting ? '作成中...' : '作成'}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
-          >
-            キャンセル
-          </button>
+        <div>
+          <label className="block mb-2">住所</label>
+          <input
+            type="text"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="w-full p-2 border rounded"
+          />
         </div>
+        <div>
+          <label className="block mb-2">管理者名</label>
+          <input
+            type="text"
+            value={formData.managerName}
+            onChange={(e) => setFormData({ ...formData, managerName: e.target.value })}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          作成
+        </button>
       </form>
     </div>
   );
