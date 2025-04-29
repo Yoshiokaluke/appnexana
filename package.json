@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "4.29.7",
+    "@headlessui/react": "^2.2.2",
     "@heroicons/react": "2.2.0",
     "@next/swc-darwin-arm64": "^14.1.0",
     "@prisma/client": "^6.6.0",
