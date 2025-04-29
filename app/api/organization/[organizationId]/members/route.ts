@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
-import { requireOrganizationAdminAccess } from '@/lib/organizationAuth';
+import { checkOrganizationAdmin } from '@/lib/auth/roles';
 import { Resend } from 'resend';
+import { getUserRoles } from '@/lib/auth/roles';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -12,7 +13,15 @@ export async function GET(
   { params }: { params: { organizationId: string } }
 ) {
   try {
-    await requireOrganizationAdminAccess(params.organizationId);
+    const user = await currentUser();
+    if (!user) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const isAdmin = await checkOrganizationAdmin(user.id, params.organizationId);
+    if (!isAdmin) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
 
     const members = await prisma.organizationMembership.findMany({
       where: { 
@@ -36,9 +45,6 @@ export async function GET(
     return NextResponse.json(members);
   } catch (error) {
     console.error('Error in GET /api/organization/[organizationId]/members:', error);
-    if (error instanceof Error && error.message.includes('権限エラー')) {
-      return new NextResponse(error.message, { status: 401 });
-    }
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -56,17 +62,19 @@ export async function POST(
       throw new Error('RESEND_API_KEY is not set');
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    await requireOrganizationAdminAccess(params.organizationId);
+    const user = await currentUser();
+    if (!user) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const isAdmin = await checkOrganizationAdmin(user.id, params.organizationId);
+    if (!isAdmin) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
 
     const { email, role } = await req.json();
     if (!email || !role) {
       return new NextResponse('必須項目が不足しています', { status: 400 });
-    }
-
-    const user = await currentUser();
-    if (!user) {
-      return new NextResponse('認証エラー', { status: 401 });
     }
 
     // 招待レコードを作成
@@ -99,24 +107,31 @@ export async function POST(
 
     return NextResponse.json({ invitation, emailResponse: data });
   } catch (error) {
-    console.error('Invitation error details:', {
-      error,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
+    console.error('Invitation error details:', error);
     if (error instanceof Error) {
-      if (error.message.includes('権限エラー')) {
-        return new NextResponse(error.message, { status: 401 });
-      }
       if (error.message.includes('Unique constraint')) {
         return new NextResponse('このメールアドレスは既に招待されています', { status: 400 });
       }
       if (error.message.includes('is not set')) {
         return new NextResponse('サーバーの設定が不完全です', { status: 500 });
       }
-      // エラーメッセージを返す
-      return new NextResponse(error.message, { status: 500 });
     }
     return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+export async function getUserRolesRoute(
+  req: Request,
+  { params }: { params: { clerkId: string } }
+) {
+  try {
+    const roles = await getUserRoles(params.clerkId);
+    return NextResponse.json(roles);
+  } catch (error) {
+    console.error('Error fetching user roles:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch user roles' },
+      { status: 500 }
+    );
   }
 } 

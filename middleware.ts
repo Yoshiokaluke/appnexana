@@ -1,8 +1,10 @@
-// middleware.ts
 import { authMiddleware } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { SystemRoleType } from "@/lib/auth/roles";
 
+// 公開ルートの定義
 const publicRoutes = [
   "/",
   "/sign-in",
@@ -10,10 +12,11 @@ const publicRoutes = [
   "/organization-list",
   "/qr-scanner-login",
   "/api/webhooks/clerk",
-  "/api/users/:userId",
-  "/api/organizations/:organizationId/members/:userId"
+  "/api/users/[userId]",
+  "/api/organizations/[organizationId]/members/[userId]"
 ];
 
+// 無視するルートの定義
 const ignoredRoutes = [
   "/qr-scanner",
   "/api/webhooks/clerk",
@@ -21,87 +24,69 @@ const ignoredRoutes = [
   "/favicon.ico"
 ];
 
+const userCache = new Map<string, { systemRole: SystemRoleType | null } | null>();
+
+export const getUserWithCache = async (userId: string) => {
+  if (userCache.has(userId)) {
+    return userCache.get(userId);
+  }
+  const user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { systemRole: true }
+  });
+  userCache.set(userId, user);
+  return user;
+};
+
+const redirectToSignIn = (req: NextRequest) => {
+  return NextResponse.redirect(new URL("/sign-in", req.url));
+};
+
+const redirectToOrganizationList = (req: NextRequest) => {
+  return NextResponse.redirect(new URL("/organization-list", req.url));
+};
+
+const isSystemTeamRoute = (req: NextRequest) => {
+  return req.nextUrl.pathname.startsWith("/system-team");
+};
+
+const isOrganizationRoute = (req: NextRequest) => {
+  return req.nextUrl.pathname.startsWith("/organization");
+};
+
+const checkOrganizationAccess = async (userId: string | null, req: NextRequest) => {
+  if (!userId) return false;
+  const organizationId = req.nextUrl.pathname.split("/")[2];
+  const membership = await prisma.organizationMembership.findFirst({
+    where: {
+      user: { clerkId: userId },
+      organizationId,
+      role: { in: ['admin', 'member'] }
+    }
+  });
+  return !!membership;
+};
+
 export default authMiddleware({
   publicRoutes,
   ignoredRoutes,
-  async afterAuth(auth, req: NextRequest) {
-    // 未認証かつ非公開ルートへのアクセス時はサインインページへリダイレクト
-    if (!auth.userId && !auth.isPublicRoute) {
+  afterAuth(auth, req) {
+    const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname);
+    const isIgnoredRoute = ignoredRoutes.some(route => req.nextUrl.pathname.startsWith(route));
+
+    // 無視するルートはそのまま通過
+    if (isIgnoredRoute) {
+      return NextResponse.next();
+    }
+
+    // 未認証ユーザーが保護されたルートにアクセスした場合
+    if (!auth.userId && !isPublicRoute) {
       return NextResponse.redirect(new URL("/sign-in", req.url));
     }
 
-    // system-teamルートのチェック
-    if (req.nextUrl.pathname.startsWith("/system-team")) {
-      if (!auth.userId) {
-        return NextResponse.redirect(new URL("/sign-in", req.url));
-      }
-
-      try {
-        const apiUrl = `${req.nextUrl.origin}/api/users/${auth.userId}`;
-        console.log('Checking system role for URL:', apiUrl);
-        
-        const res = await fetch(apiUrl);
-        const responseText = await res.text();
-        console.log('API Response:', responseText);
-
-        if (!res.ok) {
-          console.error("Error response from /api/users:", responseText);
-          return NextResponse.redirect(new URL("/organization-list", req.url));
-        }
-
-        const user = JSON.parse(responseText);
-        console.log('Parsed user data:', user);
-
-        if (user?.systemRole !== "system_team") {
-          console.log('User does not have system_team role. Current role:', user?.systemRole);
-          return NextResponse.redirect(new URL("/organization-list", req.url));
-        }
-
-        console.log('User has system_team role, proceeding...');
-      } catch (error) {
-        console.error("Error checking system role:", error);
-        return NextResponse.redirect(new URL("/organization-list", req.url));
-      }
-    }
-
-    // 組織の管理者専用ルートのチェック
-    if (req.nextUrl.pathname.match(/^\/organization\/[^/]+\/(admin|dashboard|scanner-management|organization-role|organization-affiliation|reward|event-purpose)/)) {
-      if (!auth.userId) {
-        return NextResponse.redirect(new URL("/sign-in", req.url));
-      }
-
-      try {
-        const organizationId = req.nextUrl.pathname.split("/")[2];
-        const res = await fetch(`${req.nextUrl.origin}/api/organizations/${organizationId}/members/${auth.userId}`);
-        const membership = await res.json();
-
-        if (membership?.role !== "admin") {
-          return NextResponse.redirect(new URL(`/organization/${organizationId}`, req.url));
-        }
-      } catch (error) {
-        console.error("Error checking organization role:", error);
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    }
-
-    // 組織メンバーのアクセスチェック（event関連ページなど）
-    if (req.nextUrl.pathname.match(/^\/organization\/[^/]+\/(event-|my-qr|create-event)/)) {
-      if (!auth.userId) {
-        return NextResponse.redirect(new URL("/sign-in", req.url));
-      }
-
-      try {
-        const organizationId = req.nextUrl.pathname.split("/")[2];
-        const res = await fetch(`${req.nextUrl.origin}/api/organizations/${organizationId}/members/${auth.userId}`);
-        const membership = await res.json();
-
-        if (!membership || !["member", "admin"].includes(membership.role)) {
-          return NextResponse.redirect(new URL("/organization-list", req.url));
-        }
-      } catch (error) {
-        console.error("Error checking organization membership:", error);
-        return NextResponse.redirect(new URL("/organization-list", req.url));
-      }
+    // 認証済みユーザーがログインページにアクセスした場合
+    if (auth.userId && (req.nextUrl.pathname === "/sign-in" || req.nextUrl.pathname === "/sign-up")) {
+      return NextResponse.redirect(new URL("/organization-list", req.url));
     }
 
     return NextResponse.next();
@@ -116,3 +101,11 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 };
+
+export const checkSystemTeamAccess = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { systemRole: true }
+  });
+  return user?.systemRole === 'system_team';
+}; 

@@ -1,13 +1,12 @@
 import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { ReactNode } from 'react'
-import { checkUserRole } from '@/lib/auth/utils'
-import { SystemRole, OrganizationRole } from '@/lib/auth/roles'
+import { checkUserRole, SystemRoleType, OrganizationRoleType } from '@/lib/auth/roles'
 
 interface RoleBasedLinkProps {
   href: string
   children: ReactNode
-  requiredRole?: SystemRole | OrganizationRole
+  requiredRole?: SystemRoleType | OrganizationRoleType
   className?: string
 }
 

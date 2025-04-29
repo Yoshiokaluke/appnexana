@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { currentUser } from '@clerk/nextjs/server';
-import { requireOrganizationAdminAccess } from '@/lib/organizationAuth';
+import { checkOrganizationAdmin } from '@/lib/auth/roles';
 import InviteClient from './page.client';
 
 export default async function InvitePage({
@@ -15,7 +15,7 @@ export default async function InvitePage({
   }
 
   // 組織の管理者権限（システムチームメンバーを含む）をチェック
-  await requireOrganizationAdminAccess(params.organizationId);
+  await checkOrganizationAdmin(user.id, params.organizationId);
 
   return (
     <Suspense fallback={<div>Loading...</div>}>

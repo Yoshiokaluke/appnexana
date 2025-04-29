@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
-import { isSystemTeamMember } from '@/lib/auth/roles'
+import { checkSystemTeamMember } from '@/lib/auth/roles'
 
 interface SystemTeamProtectedProps {
   children: ReactNode
@@ -15,7 +15,7 @@ export const SystemTeamProtected = async ({ children }: SystemTeamProtectedProps
   }
 
   // システムチームメンバーチェック
-  const isSystemTeam = await isSystemTeamMember(userId)
+  const isSystemTeam = await checkSystemTeamMember(userId)
   if (!isSystemTeam) {
     redirect('/')
   }

@@ -25,12 +25,12 @@ export async function isSystemTeam(): Promise<boolean> {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) return false;
 
-    const systemTeamMember = await prisma.systemTeamMember.findUnique({
+    const user = await prisma.user.findFirst({
       where: { clerkId: clerkUserId },
-      select: { role: true }
+      select: { systemRole: true }
     });
 
-    return systemTeamMember?.role === 'system_team';
+    return user?.systemRole === 'system_team';
   } catch (error) {
     console.error('Error checking system team status:', error);
     return false;
@@ -59,12 +59,12 @@ export const checkOrganizationRole = async (
 // ユーザー情報の取得
 export async function getAuthenticatedUser(clerkUserId: string): Promise<AuthenticatedUser | null> {
   try {
-    const user = await prisma.systemTeamMember.findUnique({
+    const user = await prisma.user.findFirst({
       where: { clerkId: clerkUserId },
       select: {
         id: true,
         clerkId: true,
-        role: true
+        systemRole: true
       }
     });
 
@@ -73,7 +73,7 @@ export async function getAuthenticatedUser(clerkUserId: string): Promise<Authent
     return {
       id: user.id,
       clerkId: user.clerkId,
-      role: user.role as 'system_team' | 'user'
+      role: user.systemRole as 'system_team' | 'user'
     };
   } catch (error) {
     console.error('Error getting authenticated user:', error);

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { checkOrganizationRole, getAuthenticatedUser, type AuthenticatedUser } from '@/app/lib/auth';
+import { checkOrganizationRole, getAuthenticatedUser, type AuthenticatedUser } from '@/lib/auth/roles';
 
 export async function organizationAuth(
   organizationId: string,
@@ -23,7 +23,7 @@ export async function organizationAuth(
       };
     }
 
-    const user = await getAuthenticatedUser(clerkUserId);
+    const user = await getAuthenticatedUser();
     if (!user) {
       return {
         user: null,
