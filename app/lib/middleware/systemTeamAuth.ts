@@ -1,39 +1,31 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { isSystemTeam, getAuthenticatedUser, type AuthenticatedUser } from '@/app/lib/auth';
+import { isSystemTeam } from '../auth';
 
-export async function systemTeamAuth(): Promise<{ user: AuthenticatedUser | null; error: NextResponse | null }> {
+export async function systemTeamAuth() {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return {
-        user: null,
-        error: new NextResponse('Unauthorized', { status: 401 })
-      };
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: '認証が必要です' },
+        { status: 401 }
+      );
     }
 
-    const isAdmin = await isSystemTeam();
-    if (!isAdmin) {
-      return {
-        user: null,
-        error: new NextResponse('Forbidden', { status: 403 })
-      };
+    const hasSystemTeamAccess = await isSystemTeam();
+    if (!hasSystemTeamAccess) {
+      return NextResponse.json(
+        { error: 'システムチームのみアクセス可能です' },
+        { status: 403 }
+      );
     }
 
-    const user = await getAuthenticatedUser(clerkUserId);
-    if (!user) {
-      return {
-        user: null,
-        error: new NextResponse('User not found', { status: 404 })
-      };
-    }
-
-    return { user, error: null };
+    return null;
   } catch (error) {
-    console.error('Error in systemTeamAuth:', error);
-    return {
-      user: null,
-      error: new NextResponse('Internal Server Error', { status: 500 })
-    };
+    console.error('System team auth error:', error);
+    return NextResponse.json(
+      { error: '内部サーバーエラーが発生しました' },
+      { status: 500 }
+    );
   }
-} 
+}

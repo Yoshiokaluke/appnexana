@@ -43,6 +43,11 @@ export type QrScanner = $Result.DefaultSelection<Prisma.$QrScannerPayload>
  * 
  */
 export type OrganizationInvitation = $Result.DefaultSelection<Prisma.$OrganizationInvitationPayload>
+/**
+ * Model SystemTeamMember
+ * 
+ */
+export type SystemTeamMember = $Result.DefaultSelection<Prisma.$SystemTeamMemberPayload>
 
 /**
  * Enums
@@ -256,6 +261,16 @@ export class PrismaClient<
     * ```
     */
   get organizationInvitation(): Prisma.OrganizationInvitationDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.systemTeamMember`: Exposes CRUD operations for the **SystemTeamMember** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SystemTeamMembers
+    * const systemTeamMembers = await prisma.systemTeamMember.findMany()
+    * ```
+    */
+  get systemTeamMember(): Prisma.SystemTeamMemberDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -701,7 +716,8 @@ export namespace Prisma {
     Organization: 'Organization',
     OrganizationProfile: 'OrganizationProfile',
     QrScanner: 'QrScanner',
-    OrganizationInvitation: 'OrganizationInvitation'
+    OrganizationInvitation: 'OrganizationInvitation',
+    SystemTeamMember: 'SystemTeamMember'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -720,7 +736,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "organizationMembership" | "organization" | "organizationProfile" | "qrScanner" | "organizationInvitation"
+      modelProps: "user" | "organizationMembership" | "organization" | "organizationProfile" | "qrScanner" | "organizationInvitation" | "systemTeamMember"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1168,6 +1184,80 @@ export namespace Prisma {
           }
         }
       }
+      SystemTeamMember: {
+        payload: Prisma.$SystemTeamMemberPayload<ExtArgs>
+        fields: Prisma.SystemTeamMemberFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SystemTeamMemberFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SystemTeamMemberFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>
+          }
+          findFirst: {
+            args: Prisma.SystemTeamMemberFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SystemTeamMemberFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>
+          }
+          findMany: {
+            args: Prisma.SystemTeamMemberFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>[]
+          }
+          create: {
+            args: Prisma.SystemTeamMemberCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>
+          }
+          createMany: {
+            args: Prisma.SystemTeamMemberCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SystemTeamMemberCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>[]
+          }
+          delete: {
+            args: Prisma.SystemTeamMemberDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>
+          }
+          update: {
+            args: Prisma.SystemTeamMemberUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>
+          }
+          deleteMany: {
+            args: Prisma.SystemTeamMemberDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SystemTeamMemberUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SystemTeamMemberUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>[]
+          }
+          upsert: {
+            args: Prisma.SystemTeamMemberUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SystemTeamMemberPayload>
+          }
+          aggregate: {
+            args: Prisma.SystemTeamMemberAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSystemTeamMember>
+          }
+          groupBy: {
+            args: Prisma.SystemTeamMemberGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SystemTeamMemberGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SystemTeamMemberCountArgs<ExtArgs>
+            result: $Utils.Optional<SystemTeamMemberCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1258,6 +1348,7 @@ export namespace Prisma {
     organizationProfile?: OrganizationProfileOmit
     qrScanner?: QrScannerOmit
     organizationInvitation?: OrganizationInvitationOmit
+    systemTeamMember?: SystemTeamMemberOmit
   }
 
   /* Types for Logging */
@@ -8212,6 +8303,1001 @@ export namespace Prisma {
 
 
   /**
+   * Model SystemTeamMember
+   */
+
+  export type AggregateSystemTeamMember = {
+    _count: SystemTeamMemberCountAggregateOutputType | null
+    _min: SystemTeamMemberMinAggregateOutputType | null
+    _max: SystemTeamMemberMaxAggregateOutputType | null
+  }
+
+  export type SystemTeamMemberMinAggregateOutputType = {
+    id: string | null
+    clerkId: string | null
+    role: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SystemTeamMemberMaxAggregateOutputType = {
+    id: string | null
+    clerkId: string | null
+    role: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SystemTeamMemberCountAggregateOutputType = {
+    id: number
+    clerkId: number
+    role: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type SystemTeamMemberMinAggregateInputType = {
+    id?: true
+    clerkId?: true
+    role?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SystemTeamMemberMaxAggregateInputType = {
+    id?: true
+    clerkId?: true
+    role?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SystemTeamMemberCountAggregateInputType = {
+    id?: true
+    clerkId?: true
+    role?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type SystemTeamMemberAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SystemTeamMember to aggregate.
+     */
+    where?: SystemTeamMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SystemTeamMembers to fetch.
+     */
+    orderBy?: SystemTeamMemberOrderByWithRelationInput | SystemTeamMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SystemTeamMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SystemTeamMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SystemTeamMembers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SystemTeamMembers
+    **/
+    _count?: true | SystemTeamMemberCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SystemTeamMemberMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SystemTeamMemberMaxAggregateInputType
+  }
+
+  export type GetSystemTeamMemberAggregateType<T extends SystemTeamMemberAggregateArgs> = {
+        [P in keyof T & keyof AggregateSystemTeamMember]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSystemTeamMember[P]>
+      : GetScalarType<T[P], AggregateSystemTeamMember[P]>
+  }
+
+
+
+
+  export type SystemTeamMemberGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SystemTeamMemberWhereInput
+    orderBy?: SystemTeamMemberOrderByWithAggregationInput | SystemTeamMemberOrderByWithAggregationInput[]
+    by: SystemTeamMemberScalarFieldEnum[] | SystemTeamMemberScalarFieldEnum
+    having?: SystemTeamMemberScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SystemTeamMemberCountAggregateInputType | true
+    _min?: SystemTeamMemberMinAggregateInputType
+    _max?: SystemTeamMemberMaxAggregateInputType
+  }
+
+  export type SystemTeamMemberGroupByOutputType = {
+    id: string
+    clerkId: string
+    role: string
+    createdAt: Date
+    updatedAt: Date
+    _count: SystemTeamMemberCountAggregateOutputType | null
+    _min: SystemTeamMemberMinAggregateOutputType | null
+    _max: SystemTeamMemberMaxAggregateOutputType | null
+  }
+
+  type GetSystemTeamMemberGroupByPayload<T extends SystemTeamMemberGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SystemTeamMemberGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SystemTeamMemberGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SystemTeamMemberGroupByOutputType[P]>
+            : GetScalarType<T[P], SystemTeamMemberGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SystemTeamMemberSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    clerkId?: boolean
+    role?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["systemTeamMember"]>
+
+  export type SystemTeamMemberSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    clerkId?: boolean
+    role?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["systemTeamMember"]>
+
+  export type SystemTeamMemberSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    clerkId?: boolean
+    role?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["systemTeamMember"]>
+
+  export type SystemTeamMemberSelectScalar = {
+    id?: boolean
+    clerkId?: boolean
+    role?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type SystemTeamMemberOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clerkId" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["systemTeamMember"]>
+
+  export type $SystemTeamMemberPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SystemTeamMember"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      clerkId: string
+      role: string
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["systemTeamMember"]>
+    composites: {}
+  }
+
+  type SystemTeamMemberGetPayload<S extends boolean | null | undefined | SystemTeamMemberDefaultArgs> = $Result.GetResult<Prisma.$SystemTeamMemberPayload, S>
+
+  type SystemTeamMemberCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SystemTeamMemberFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SystemTeamMemberCountAggregateInputType | true
+    }
+
+  export interface SystemTeamMemberDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SystemTeamMember'], meta: { name: 'SystemTeamMember' } }
+    /**
+     * Find zero or one SystemTeamMember that matches the filter.
+     * @param {SystemTeamMemberFindUniqueArgs} args - Arguments to find a SystemTeamMember
+     * @example
+     * // Get one SystemTeamMember
+     * const systemTeamMember = await prisma.systemTeamMember.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SystemTeamMemberFindUniqueArgs>(args: SelectSubset<T, SystemTeamMemberFindUniqueArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SystemTeamMember that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SystemTeamMemberFindUniqueOrThrowArgs} args - Arguments to find a SystemTeamMember
+     * @example
+     * // Get one SystemTeamMember
+     * const systemTeamMember = await prisma.systemTeamMember.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SystemTeamMemberFindUniqueOrThrowArgs>(args: SelectSubset<T, SystemTeamMemberFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SystemTeamMember that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SystemTeamMemberFindFirstArgs} args - Arguments to find a SystemTeamMember
+     * @example
+     * // Get one SystemTeamMember
+     * const systemTeamMember = await prisma.systemTeamMember.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SystemTeamMemberFindFirstArgs>(args?: SelectSubset<T, SystemTeamMemberFindFirstArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SystemTeamMember that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SystemTeamMemberFindFirstOrThrowArgs} args - Arguments to find a SystemTeamMember
+     * @example
+     * // Get one SystemTeamMember
+     * const systemTeamMember = await prisma.systemTeamMember.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SystemTeamMemberFindFirstOrThrowArgs>(args?: SelectSubset<T, SystemTeamMemberFindFirstOrThrowArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SystemTeamMembers that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SystemTeamMemberFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SystemTeamMembers
+     * const systemTeamMembers = await prisma.systemTeamMember.findMany()
+     * 
+     * // Get first 10 SystemTeamMembers
+     * const systemTeamMembers = await prisma.systemTeamMember.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const systemTeamMemberWithIdOnly = await prisma.systemTeamMember.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SystemTeamMemberFindManyArgs>(args?: SelectSubset<T, SystemTeamMemberFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SystemTeamMember.
+     * @param {SystemTeamMemberCreateArgs} args - Arguments to create a SystemTeamMember.
+     * @example
+     * // Create one SystemTeamMember
+     * const SystemTeamMember = await prisma.systemTeamMember.create({
+     *   data: {
+     *     // ... data to create a SystemTeamMember
+     *   }
+     * })
+     * 
+     */
+    create<T extends SystemTeamMemberCreateArgs>(args: SelectSubset<T, SystemTeamMemberCreateArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SystemTeamMembers.
+     * @param {SystemTeamMemberCreateManyArgs} args - Arguments to create many SystemTeamMembers.
+     * @example
+     * // Create many SystemTeamMembers
+     * const systemTeamMember = await prisma.systemTeamMember.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SystemTeamMemberCreateManyArgs>(args?: SelectSubset<T, SystemTeamMemberCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SystemTeamMembers and returns the data saved in the database.
+     * @param {SystemTeamMemberCreateManyAndReturnArgs} args - Arguments to create many SystemTeamMembers.
+     * @example
+     * // Create many SystemTeamMembers
+     * const systemTeamMember = await prisma.systemTeamMember.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SystemTeamMembers and only return the `id`
+     * const systemTeamMemberWithIdOnly = await prisma.systemTeamMember.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SystemTeamMemberCreateManyAndReturnArgs>(args?: SelectSubset<T, SystemTeamMemberCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SystemTeamMember.
+     * @param {SystemTeamMemberDeleteArgs} args - Arguments to delete one SystemTeamMember.
+     * @example
+     * // Delete one SystemTeamMember
+     * const SystemTeamMember = await prisma.systemTeamMember.delete({
+     *   where: {
+     *     // ... filter to delete one SystemTeamMember
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SystemTeamMemberDeleteArgs>(args: SelectSubset<T, SystemTeamMemberDeleteArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SystemTeamMember.
+     * @param {SystemTeamMemberUpdateArgs} args - Arguments to update one SystemTeamMember.
+     * @example
+     * // Update one SystemTeamMember
+     * const systemTeamMember = await prisma.systemTeamMember.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SystemTeamMemberUpdateArgs>(args: SelectSubset<T, SystemTeamMemberUpdateArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SystemTeamMembers.
+     * @param {SystemTeamMemberDeleteManyArgs} args - Arguments to filter SystemTeamMembers to delete.
+     * @example
+     * // Delete a few SystemTeamMembers
+     * const { count } = await prisma.systemTeamMember.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SystemTeamMemberDeleteManyArgs>(args?: SelectSubset<T, SystemTeamMemberDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SystemTeamMembers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SystemTeamMemberUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SystemTeamMembers
+     * const systemTeamMember = await prisma.systemTeamMember.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SystemTeamMemberUpdateManyArgs>(args: SelectSubset<T, SystemTeamMemberUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SystemTeamMembers and returns the data updated in the database.
+     * @param {SystemTeamMemberUpdateManyAndReturnArgs} args - Arguments to update many SystemTeamMembers.
+     * @example
+     * // Update many SystemTeamMembers
+     * const systemTeamMember = await prisma.systemTeamMember.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SystemTeamMembers and only return the `id`
+     * const systemTeamMemberWithIdOnly = await prisma.systemTeamMember.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SystemTeamMemberUpdateManyAndReturnArgs>(args: SelectSubset<T, SystemTeamMemberUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SystemTeamMember.
+     * @param {SystemTeamMemberUpsertArgs} args - Arguments to update or create a SystemTeamMember.
+     * @example
+     * // Update or create a SystemTeamMember
+     * const systemTeamMember = await prisma.systemTeamMember.upsert({
+     *   create: {
+     *     // ... data to create a SystemTeamMember
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SystemTeamMember we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SystemTeamMemberUpsertArgs>(args: SelectSubset<T, SystemTeamMemberUpsertArgs<ExtArgs>>): Prisma__SystemTeamMemberClient<$Result.GetResult<Prisma.$SystemTeamMemberPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SystemTeamMembers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SystemTeamMemberCountArgs} args - Arguments to filter SystemTeamMembers to count.
+     * @example
+     * // Count the number of SystemTeamMembers
+     * const count = await prisma.systemTeamMember.count({
+     *   where: {
+     *     // ... the filter for the SystemTeamMembers we want to count
+     *   }
+     * })
+    **/
+    count<T extends SystemTeamMemberCountArgs>(
+      args?: Subset<T, SystemTeamMemberCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SystemTeamMemberCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SystemTeamMember.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SystemTeamMemberAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SystemTeamMemberAggregateArgs>(args: Subset<T, SystemTeamMemberAggregateArgs>): Prisma.PrismaPromise<GetSystemTeamMemberAggregateType<T>>
+
+    /**
+     * Group by SystemTeamMember.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SystemTeamMemberGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SystemTeamMemberGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SystemTeamMemberGroupByArgs['orderBy'] }
+        : { orderBy?: SystemTeamMemberGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SystemTeamMemberGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSystemTeamMemberGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SystemTeamMember model
+   */
+  readonly fields: SystemTeamMemberFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SystemTeamMember.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SystemTeamMemberClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SystemTeamMember model
+   */
+  interface SystemTeamMemberFieldRefs {
+    readonly id: FieldRef<"SystemTeamMember", 'String'>
+    readonly clerkId: FieldRef<"SystemTeamMember", 'String'>
+    readonly role: FieldRef<"SystemTeamMember", 'String'>
+    readonly createdAt: FieldRef<"SystemTeamMember", 'DateTime'>
+    readonly updatedAt: FieldRef<"SystemTeamMember", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SystemTeamMember findUnique
+   */
+  export type SystemTeamMemberFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * Filter, which SystemTeamMember to fetch.
+     */
+    where: SystemTeamMemberWhereUniqueInput
+  }
+
+  /**
+   * SystemTeamMember findUniqueOrThrow
+   */
+  export type SystemTeamMemberFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * Filter, which SystemTeamMember to fetch.
+     */
+    where: SystemTeamMemberWhereUniqueInput
+  }
+
+  /**
+   * SystemTeamMember findFirst
+   */
+  export type SystemTeamMemberFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * Filter, which SystemTeamMember to fetch.
+     */
+    where?: SystemTeamMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SystemTeamMembers to fetch.
+     */
+    orderBy?: SystemTeamMemberOrderByWithRelationInput | SystemTeamMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SystemTeamMembers.
+     */
+    cursor?: SystemTeamMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SystemTeamMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SystemTeamMembers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SystemTeamMembers.
+     */
+    distinct?: SystemTeamMemberScalarFieldEnum | SystemTeamMemberScalarFieldEnum[]
+  }
+
+  /**
+   * SystemTeamMember findFirstOrThrow
+   */
+  export type SystemTeamMemberFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * Filter, which SystemTeamMember to fetch.
+     */
+    where?: SystemTeamMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SystemTeamMembers to fetch.
+     */
+    orderBy?: SystemTeamMemberOrderByWithRelationInput | SystemTeamMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SystemTeamMembers.
+     */
+    cursor?: SystemTeamMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SystemTeamMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SystemTeamMembers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SystemTeamMembers.
+     */
+    distinct?: SystemTeamMemberScalarFieldEnum | SystemTeamMemberScalarFieldEnum[]
+  }
+
+  /**
+   * SystemTeamMember findMany
+   */
+  export type SystemTeamMemberFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * Filter, which SystemTeamMembers to fetch.
+     */
+    where?: SystemTeamMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SystemTeamMembers to fetch.
+     */
+    orderBy?: SystemTeamMemberOrderByWithRelationInput | SystemTeamMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SystemTeamMembers.
+     */
+    cursor?: SystemTeamMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SystemTeamMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SystemTeamMembers.
+     */
+    skip?: number
+    distinct?: SystemTeamMemberScalarFieldEnum | SystemTeamMemberScalarFieldEnum[]
+  }
+
+  /**
+   * SystemTeamMember create
+   */
+  export type SystemTeamMemberCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * The data needed to create a SystemTeamMember.
+     */
+    data: XOR<SystemTeamMemberCreateInput, SystemTeamMemberUncheckedCreateInput>
+  }
+
+  /**
+   * SystemTeamMember createMany
+   */
+  export type SystemTeamMemberCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SystemTeamMembers.
+     */
+    data: SystemTeamMemberCreateManyInput | SystemTeamMemberCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SystemTeamMember createManyAndReturn
+   */
+  export type SystemTeamMemberCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * The data used to create many SystemTeamMembers.
+     */
+    data: SystemTeamMemberCreateManyInput | SystemTeamMemberCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SystemTeamMember update
+   */
+  export type SystemTeamMemberUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * The data needed to update a SystemTeamMember.
+     */
+    data: XOR<SystemTeamMemberUpdateInput, SystemTeamMemberUncheckedUpdateInput>
+    /**
+     * Choose, which SystemTeamMember to update.
+     */
+    where: SystemTeamMemberWhereUniqueInput
+  }
+
+  /**
+   * SystemTeamMember updateMany
+   */
+  export type SystemTeamMemberUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SystemTeamMembers.
+     */
+    data: XOR<SystemTeamMemberUpdateManyMutationInput, SystemTeamMemberUncheckedUpdateManyInput>
+    /**
+     * Filter which SystemTeamMembers to update
+     */
+    where?: SystemTeamMemberWhereInput
+    /**
+     * Limit how many SystemTeamMembers to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SystemTeamMember updateManyAndReturn
+   */
+  export type SystemTeamMemberUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * The data used to update SystemTeamMembers.
+     */
+    data: XOR<SystemTeamMemberUpdateManyMutationInput, SystemTeamMemberUncheckedUpdateManyInput>
+    /**
+     * Filter which SystemTeamMembers to update
+     */
+    where?: SystemTeamMemberWhereInput
+    /**
+     * Limit how many SystemTeamMembers to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SystemTeamMember upsert
+   */
+  export type SystemTeamMemberUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * The filter to search for the SystemTeamMember to update in case it exists.
+     */
+    where: SystemTeamMemberWhereUniqueInput
+    /**
+     * In case the SystemTeamMember found by the `where` argument doesn't exist, create a new SystemTeamMember with this data.
+     */
+    create: XOR<SystemTeamMemberCreateInput, SystemTeamMemberUncheckedCreateInput>
+    /**
+     * In case the SystemTeamMember was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SystemTeamMemberUpdateInput, SystemTeamMemberUncheckedUpdateInput>
+  }
+
+  /**
+   * SystemTeamMember delete
+   */
+  export type SystemTeamMemberDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+    /**
+     * Filter which SystemTeamMember to delete.
+     */
+    where: SystemTeamMemberWhereUniqueInput
+  }
+
+  /**
+   * SystemTeamMember deleteMany
+   */
+  export type SystemTeamMemberDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SystemTeamMembers to delete
+     */
+    where?: SystemTeamMemberWhereInput
+    /**
+     * Limit how many SystemTeamMembers to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SystemTeamMember without action
+   */
+  export type SystemTeamMemberDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SystemTeamMember
+     */
+    select?: SystemTeamMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SystemTeamMember
+     */
+    omit?: SystemTeamMemberOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -8306,6 +9392,17 @@ export namespace Prisma {
   };
 
   export type OrganizationInvitationScalarFieldEnum = (typeof OrganizationInvitationScalarFieldEnum)[keyof typeof OrganizationInvitationScalarFieldEnum]
+
+
+  export const SystemTeamMemberScalarFieldEnum: {
+    id: 'id',
+    clerkId: 'clerkId',
+    role: 'role',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type SystemTeamMemberScalarFieldEnum = (typeof SystemTeamMemberScalarFieldEnum)[keyof typeof SystemTeamMemberScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -8852,6 +9949,58 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"OrganizationInvitation"> | Date | string
   }
 
+  export type SystemTeamMemberWhereInput = {
+    AND?: SystemTeamMemberWhereInput | SystemTeamMemberWhereInput[]
+    OR?: SystemTeamMemberWhereInput[]
+    NOT?: SystemTeamMemberWhereInput | SystemTeamMemberWhereInput[]
+    id?: StringFilter<"SystemTeamMember"> | string
+    clerkId?: StringFilter<"SystemTeamMember"> | string
+    role?: StringFilter<"SystemTeamMember"> | string
+    createdAt?: DateTimeFilter<"SystemTeamMember"> | Date | string
+    updatedAt?: DateTimeFilter<"SystemTeamMember"> | Date | string
+  }
+
+  export type SystemTeamMemberOrderByWithRelationInput = {
+    id?: SortOrder
+    clerkId?: SortOrder
+    role?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SystemTeamMemberWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    clerkId?: string
+    AND?: SystemTeamMemberWhereInput | SystemTeamMemberWhereInput[]
+    OR?: SystemTeamMemberWhereInput[]
+    NOT?: SystemTeamMemberWhereInput | SystemTeamMemberWhereInput[]
+    role?: StringFilter<"SystemTeamMember"> | string
+    createdAt?: DateTimeFilter<"SystemTeamMember"> | Date | string
+    updatedAt?: DateTimeFilter<"SystemTeamMember"> | Date | string
+  }, "id" | "clerkId">
+
+  export type SystemTeamMemberOrderByWithAggregationInput = {
+    id?: SortOrder
+    clerkId?: SortOrder
+    role?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: SystemTeamMemberCountOrderByAggregateInput
+    _max?: SystemTeamMemberMaxOrderByAggregateInput
+    _min?: SystemTeamMemberMinOrderByAggregateInput
+  }
+
+  export type SystemTeamMemberScalarWhereWithAggregatesInput = {
+    AND?: SystemTeamMemberScalarWhereWithAggregatesInput | SystemTeamMemberScalarWhereWithAggregatesInput[]
+    OR?: SystemTeamMemberScalarWhereWithAggregatesInput[]
+    NOT?: SystemTeamMemberScalarWhereWithAggregatesInput | SystemTeamMemberScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SystemTeamMember"> | string
+    clerkId?: StringWithAggregatesFilter<"SystemTeamMember"> | string
+    role?: StringWithAggregatesFilter<"SystemTeamMember"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"SystemTeamMember"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"SystemTeamMember"> | Date | string
+  }
+
   export type UserCreateInput = {
     id?: string
     clerkId: string
@@ -9328,6 +10477,62 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type SystemTeamMemberCreateInput = {
+    id?: string
+    clerkId: string
+    role?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SystemTeamMemberUncheckedCreateInput = {
+    id?: string
+    clerkId: string
+    role?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SystemTeamMemberUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clerkId?: StringFieldUpdateOperationsInput | string
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SystemTeamMemberUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clerkId?: StringFieldUpdateOperationsInput | string
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SystemTeamMemberCreateManyInput = {
+    id?: string
+    clerkId: string
+    role?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SystemTeamMemberUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clerkId?: StringFieldUpdateOperationsInput | string
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SystemTeamMemberUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clerkId?: StringFieldUpdateOperationsInput | string
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -9745,6 +10950,30 @@ export namespace Prisma {
     role?: SortOrder
     expiresAt?: SortOrder
     invitedBy?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SystemTeamMemberCountOrderByAggregateInput = {
+    id?: SortOrder
+    clerkId?: SortOrder
+    role?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SystemTeamMemberMaxOrderByAggregateInput = {
+    id?: SortOrder
+    clerkId?: SortOrder
+    role?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SystemTeamMemberMinOrderByAggregateInput = {
+    id?: SortOrder
+    clerkId?: SortOrder
+    role?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }

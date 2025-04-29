@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { isSystemTeam } from "@/lib/auth";
+import { isSystemTeam } from "@/app/lib/auth";
 
 export default async function SystemTeamLayout({
   children,

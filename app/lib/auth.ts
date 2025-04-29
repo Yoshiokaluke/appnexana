@@ -1,25 +1,41 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { redirect } from "next/navigation";
 
 export type AuthenticatedUser = {
   id: string;
   clerkId: string;
-  roles: string[];
-  systemRole: 'system_team' | null;
+  role: 'system_team' | 'user';
 };
+
+// 基本的な認証チェック
+export async function requireAuth() {
+  const user = await currentUser();
+  
+  if (!user) {
+    redirect("/sign-in?message=ログインが必要です");
+  }
+  
+  return user;
+}
 
 // システムチーム権限チェック
-export const isSystemTeam = async (): Promise<boolean> => {
-  const { userId: clerkUserId } = await auth();
-  if (!clerkUserId) return false;
+export async function isSystemTeam(): Promise<boolean> {
+  try {
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) return false;
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId: clerkUserId },
-    select: { systemRole: true }
-  });
+    const systemTeamMember = await prisma.systemTeamMember.findUnique({
+      where: { clerkId: clerkUserId },
+      select: { role: true }
+    });
 
-  return user?.systemRole === 'system_team';
-};
+    return systemTeamMember?.role === 'system_team';
+  } catch (error) {
+    console.error('Error checking system team status:', error);
+    return false;
+  }
+}
 
 // 組織内での権限チェック
 export const checkOrganizationRole = async (
@@ -41,23 +57,26 @@ export const checkOrganizationRole = async (
 };
 
 // ユーザー情報の取得
-export const getAuthenticatedUser = async (clerkUserId: string): Promise<AuthenticatedUser | null> => {
-  const user = await prisma.user.findUnique({
-    where: { clerkId: clerkUserId },
-    select: {
-      id: true,
-      clerkId: true,
-      roles: true,
-      systemRole: true
-    }
-  });
+export async function getAuthenticatedUser(clerkUserId: string): Promise<AuthenticatedUser | null> {
+  try {
+    const user = await prisma.systemTeamMember.findUnique({
+      where: { clerkId: clerkUserId },
+      select: {
+        id: true,
+        clerkId: true,
+        role: true
+      }
+    });
 
-  if (!user) return null;
+    if (!user) return null;
 
-  return {
-    id: user.id,
-    clerkId: user.clerkId,
-    roles: user.roles,
-    systemRole: user.systemRole
-  };
-}; 
+    return {
+      id: user.id,
+      clerkId: user.clerkId,
+      role: user.role as 'system_team' | 'user'
+    };
+  } catch (error) {
+    console.error('Error getting authenticated user:', error);
+    return null;
+  }
+} 

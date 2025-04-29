@@ -107,3 +107,11 @@ model OrganizationInvitation {
 
   @@unique([email, organizationId])
 }
+
+model SystemTeamMember {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  role      String   @default("system_team")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

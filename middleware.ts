@@ -1,13 +1,30 @@
 // middleware.ts
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { authMiddleware } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default clerkMiddleware({
-  async beforeAuth(req) {
-    // Handle any custom logic before authentication runs
-    return NextResponse.next();
-  },
-  async afterAuth(auth, req) {
+const publicRoutes = [
+  "/",
+  "/sign-in",
+  "/sign-up",
+  "/organization-list",
+  "/qr-scanner-login",
+  "/api/webhooks/clerk",
+  "/api/users/:userId",
+  "/api/organizations/:organizationId/members/:userId"
+];
+
+const ignoredRoutes = [
+  "/qr-scanner",
+  "/api/webhooks/clerk",
+  "/_next/static",
+  "/favicon.ico"
+];
+
+export default authMiddleware({
+  publicRoutes,
+  ignoredRoutes,
+  async afterAuth(auth, req: NextRequest) {
     // 未認証かつ非公開ルートへのアクセス時はサインインページへリダイレクト
     if (!auth.userId && !auth.isPublicRoute) {
       return NextResponse.redirect(new URL("/sign-in", req.url));
@@ -20,16 +37,27 @@ export default clerkMiddleware({
       }
 
       try {
-        const res = await fetch(`${req.nextUrl.origin}/api/users/${auth.userId}`);
+        const apiUrl = `${req.nextUrl.origin}/api/users/${auth.userId}`;
+        console.log('Checking system role for URL:', apiUrl);
+        
+        const res = await fetch(apiUrl);
+        const responseText = await res.text();
+        console.log('API Response:', responseText);
+
         if (!res.ok) {
-          console.error("Error response from /api/users:", await res.text());
+          console.error("Error response from /api/users:", responseText);
           return NextResponse.redirect(new URL("/organization-list", req.url));
         }
-        const user = await res.json();
+
+        const user = JSON.parse(responseText);
+        console.log('Parsed user data:', user);
 
         if (user?.systemRole !== "system_team") {
+          console.log('User does not have system_team role. Current role:', user?.systemRole);
           return NextResponse.redirect(new URL("/organization-list", req.url));
         }
+
+        console.log('User has system_team role, proceeding...');
       } catch (error) {
         console.error("Error checking system role:", error);
         return NextResponse.redirect(new URL("/organization-list", req.url));
@@ -67,7 +95,6 @@ export default clerkMiddleware({
         const res = await fetch(`${req.nextUrl.origin}/api/organizations/${organizationId}/members/${auth.userId}`);
         const membership = await res.json();
 
-        // memberまたはadmin権限がない場合はorganization-listにリダイレクト
         if (!membership || !["member", "admin"].includes(membership.role)) {
           return NextResponse.redirect(new URL("/organization-list", req.url));
         }
@@ -78,25 +105,14 @@ export default clerkMiddleware({
     }
 
     return NextResponse.next();
-  },
-  publicRoutes: [
-    "/",
-    "/sign-in",
-    "/sign-up",
-    "/organization-list",  // organization-listを公開ルートに追加
-    "/qr-scanner-login",  // QRスキャナー用ログインページ
-    "/api/webhooks/clerk",
-    "/api/users/:userId",
-    "/api/organizations/:organizationId/members/:userId"
-  ],
-  ignoredRoutes: [
-    "/qr-scanner/**",     // QRスキャナー関連のルートは別認証を使用
-    "/api/webhooks/clerk",
-    "/_next/static/(.*)",
-    "/favicon.ico"
-  ]
+  }
 });
 
+// 必要なパスのみをマッチさせる
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    "/((?!.+\\.[\\w]+$|_next).*)",
+    "/",
+    "/(api|trpc)(.*)",
+  ],
 };
