@@ -135,7 +135,7 @@ export async function POST(
       html: `
         <h1>組織への招待</h1>
         <p>以下のリンクから組織に参加してください：</p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/organization/${params.organizationId}/invite/accept">招待を受け入れる</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/organization/${params.organizationId}/invitation/${invitation.id}/accept">招待を受け入れる</a>
       `,
     });
 

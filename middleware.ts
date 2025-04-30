@@ -68,29 +68,27 @@ const checkOrganizationAccess = async (userId: string | null, req: NextRequest) 
 };
 
 export default authMiddleware({
-  publicRoutes,
-  ignoredRoutes,
-  afterAuth(auth, req) {
-    const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname);
-    const isIgnoredRoute = ignoredRoutes.some(route => req.nextUrl.pathname.startsWith(route));
+  publicRoutes: ["/"],
+  afterAuth: async (auth, req) => {
+    if (!auth.userId && !auth.isPublicRoute) {
+      // 未認証の場合、現在のURLをクエリパラメータとして保存
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
+    }
 
-    // 無視するルートはそのまま通過
-    if (isIgnoredRoute) {
+    // 認証済みで組織の招待acceptページの場合は、そのまま処理を続行
+    if (auth.userId && req.nextUrl.pathname.includes('/invitation/') && req.nextUrl.pathname.endsWith('/accept')) {
       return NextResponse.next();
     }
 
-    // 未認証ユーザーが保護されたルートにアクセスした場合
-    if (!auth.userId && !isPublicRoute) {
-      return NextResponse.redirect(new URL("/sign-in", req.url));
-    }
-
-    // 認証済みユーザーがログインページにアクセスした場合
-    if (auth.userId && (req.nextUrl.pathname === "/sign-in" || req.nextUrl.pathname === "/sign-up")) {
-      return NextResponse.redirect(new URL("/organization-list", req.url));
+    // 認証済みでsign-inまたはsign-upページにいる場合は組織リストにリダイレクト
+    if (auth.userId && (req.nextUrl.pathname === '/sign-in' || req.nextUrl.pathname === '/sign-up')) {
+      return NextResponse.redirect(new URL('/organization-list', req.url));
     }
 
     return NextResponse.next();
-  }
+  },
 });
 
 // 必要なパスのみをマッチさせる

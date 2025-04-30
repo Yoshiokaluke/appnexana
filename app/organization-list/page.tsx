@@ -1,68 +1,80 @@
-import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
-import { OrganizationCard } from '@/components/features/organization/OrganizationCard'
+'use client';
 
-export default async function OrganizationListPage() {
-  const { userId } = await auth()
-  if (!userId) {
-    redirect('/sign-in')
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
+
+interface Organization {
+  id: string;
+  name: string;
+}
+
+export default function OrganizationListPage() {
+  const router = useRouter();
+  const { userId } = useAuth();
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        console.log('Fetching organizations for userId:', userId);
+        const response = await fetch('/api/organizations/list');
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          throw new Error('組織の取得に失敗しました');
+        }
+        const data = await response.json();
+        console.log('Received organizations:', data);
+        setOrganizations(data);
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchOrganizations();
+    } else {
+      console.log('No userId available yet');
+    }
+  }, [userId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">読み込み中...</h1>
+          <p>しばらくお待ちください</p>
+        </div>
+      </div>
+    );
   }
 
-  // ユーザーの所属組織を取得
-  const memberships = await prisma.organizationMembership.findMany({
-    where: { userId },
-    include: {
-      organization: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
-    },
-    orderBy: {
-      organization: {
-        name: 'asc'
-      }
-    }
-  })
-
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900">
-            ワークスペースを選択
-          </h1>
-          <p className="mt-2 text-lg text-gray-600">
-            アクセスしたい組織を選択してください
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {memberships.map((membership) => (
-            <OrganizationCard
-              key={membership.organization.id}
-              organization={membership.organization}
-              role={membership.role}
-            />
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">ワークスペースを選択</h1>
+      {organizations.length === 0 ? (
+        <p className="text-gray-600">所属している組織がありません</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {organizations.map((org) => (
+            <button
+              key={org.id}
+              onClick={() => router.push(`/organization/${org.id}`)}
+              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left"
+            >
+              <h2 className="font-semibold">{org.name}</h2>
+            </button>
           ))}
         </div>
-
-        {memberships.length === 0 && (
-          <div className="text-center mt-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100">
-              <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">所属組織がありません</h3>
-            <p className="mt-2 text-base text-gray-500">
-              システム管理者に連絡して、組織への招待を依頼してください。
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
-  )
+  );
 } 
