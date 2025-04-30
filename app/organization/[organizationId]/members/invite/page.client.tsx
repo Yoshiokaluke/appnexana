@@ -42,8 +42,26 @@ export function InvitePageContent({ organizationId }: InvitePageContentProps) {
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('Server error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        
         if (response.status === 401) {
           toast.error('権限エラー: この操作を実行する権限がありません');
+          return;
+        }
+        if (response.status === 403) {
+          toast.error('アクセス拒否: この操作を実行する権限がありません');
+          return;
+        }
+        if (response.status === 400) {
+          if (errorText.includes('既に招待されています')) {
+            toast.error('このメールアドレスは既に招待されています。別のメールアドレスを指定してください。');
+          } else {
+            toast.error(errorText || '入力内容に問題があります');
+          }
           return;
         }
         throw new Error(errorText || '招待の送信に失敗しました');

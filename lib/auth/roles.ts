@@ -113,7 +113,7 @@ export const checkSystemTeamMember = async (userId: string): Promise<boolean> =>
 }
 
 // 組織管理者のチェック
-export const checkOrganizationAdmin = async (userId: string, organizationId: string): Promise<boolean> => {
+export async function checkOrganizationAdmin(userId: string, organizationId: string) {
   try {
     const membership = await prisma.organizationMembership.findFirst({
       where: {
@@ -122,7 +122,17 @@ export const checkOrganizationAdmin = async (userId: string, organizationId: str
         role: 'admin'
       }
     })
-    return !!membership
+    if (membership) {
+      return true;
+    }
+
+    // system-team権限も許可
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (user?.systemRole === 'system_team') {
+      return true;
+    }
+
+    return false;
   } catch (error) {
     console.error('Error checking organization admin:', error)
     return false

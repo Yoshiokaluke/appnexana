@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { checkOrganizationAdmin } from '@/lib/auth/roles';
 import { Resend } from 'resend';
 import { getUserRoles } from '@/lib/auth/roles';
@@ -13,12 +13,12 @@ export async function GET(
   { params }: { params: { organizationId: string } }
 ) {
   try {
-    const user = await currentUser();
-    if (!user) {
+    const { userId } = await auth();
+    if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const isAdmin = await checkOrganizationAdmin(user.id, params.organizationId);
+    const isAdmin = await checkOrganizationAdmin(userId, params.organizationId);
     if (!isAdmin) {
       return new NextResponse('Forbidden', { status: 403 });
     }
@@ -62,12 +62,12 @@ export async function POST(
       throw new Error('RESEND_API_KEY is not set');
     }
 
-    const user = await currentUser();
-    if (!user) {
+    const { userId } = await auth();
+    if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const isAdmin = await checkOrganizationAdmin(user.id, params.organizationId);
+    const isAdmin = await checkOrganizationAdmin(userId, params.organizationId);
     if (!isAdmin) {
       return new NextResponse('Forbidden', { status: 403 });
     }
@@ -77,20 +77,59 @@ export async function POST(
       return new NextResponse('必須項目が不足しています', { status: 400 });
     }
 
+    // 既存の招待を確認
+    const existingInvitation = await prisma.organizationInvitation.findUnique({
+      where: {
+        email_organizationId: {
+          email,
+          organizationId: params.organizationId
+        }
+      }
+    });
+
+    if (existingInvitation) {
+      const message = existingInvitation.expiresAt > new Date()
+        ? 'このメールアドレスは既に招待されています。招待は7日間有効です。'
+        : 'このメールアドレスは既に招待されていますが、招待は期限切れです。新しい招待を送信します。';
+      
+      if (existingInvitation.expiresAt > new Date()) {
+        return new NextResponse(message, { status: 400 });
+      }
+      
+      // 期限切れの招待を削除
+      await prisma.organizationInvitation.delete({
+        where: {
+          email_organizationId: {
+            email,
+            organizationId: params.organizationId
+          }
+        }
+      });
+    }
+
+    // clerkIdからUserのidを取得
+    const inviter = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    });
+
+    if (!inviter) {
+      return new NextResponse('ユーザーが見つかりません', { status: 404 });
+    }
+
     // 招待レコードを作成
     const invitation = await prisma.organizationInvitation.create({
       data: {
         email,
         role,
         organizationId: params.organizationId,
-        invitedBy: user.id,
+        invitedBy: inviter.id,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7日後
       }
     });
 
     // 招待メールを送信
     const { data, error } = await resend.emails.send({
-      from: 'AppNexana <no-reply@appnexana.com>',
+      from: 'AppNexana <no-reply@nexanahq.com>',
       to: email,
       subject: '組織への招待',
       html: `
@@ -101,8 +140,13 @@ export async function POST(
     });
 
     if (error) {
-      console.error('Resend error:', error);
-      return new NextResponse('招待メールの送信に失敗しました', { status: 500 });
+      console.error('Resend error details:', {
+        error,
+        email,
+        organizationId: params.organizationId,
+        appUrl: process.env.NEXT_PUBLIC_APP_URL
+      });
+      return new NextResponse(`招待メールの送信に失敗しました: ${error.message}`, { status: 500 });
     }
 
     return NextResponse.json({ invitation, emailResponse: data });
@@ -115,6 +159,8 @@ export async function POST(
       if (error.message.includes('is not set')) {
         return new NextResponse('サーバーの設定が不完全です', { status: 500 });
       }
+      // その他のエラーの場合、エラーメッセージを返す
+      return new NextResponse(error.message, { status: 500 });
     }
     return new NextResponse('Internal Server Error', { status: 500 });
   }
