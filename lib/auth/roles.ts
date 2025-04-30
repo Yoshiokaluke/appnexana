@@ -107,9 +107,12 @@ export const getUserRoles = async (userId: string, organizationId?: string): Pro
 }
 
 // システムチームメンバーのチェック
-export const checkSystemTeamMember = async (userId: string): Promise<boolean> => {
-  const systemRole = await getSystemRole(userId)
-  return systemRole === 'system_team'
+export const checkSystemTeamRole = async (userId: string): Promise<boolean> => {
+  const user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { systemRole: true }
+  });
+  return user?.systemRole === 'system_team';
 }
 
 // 組織管理者のチェック
@@ -171,7 +174,7 @@ export const systemTeamAuth = async (): Promise<AuthResult> => {
       }
     }
 
-    const isSystemTeam = await checkSystemTeamMember(userId)
+    const isSystemTeam = await checkSystemTeamRole(userId)
     if (!isSystemTeam) {
       return {
         success: false,
@@ -223,7 +226,7 @@ export async function checkUserRole(userId: string, requiredRole?: SystemRoleTyp
   if (!requiredRole) return true
 
   if (requiredRole === 'system_team') {
-    return checkSystemTeamMember(userId)
+    return checkSystemTeamRole(userId)
   }
 
   return false

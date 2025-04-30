@@ -51,7 +51,7 @@ export async function POST(
     // メンバーシップの作成
     await prisma.organizationMembership.create({
       data: {
-        userId: user.id,
+        clerkId: user.clerkId,
         organizationId: invitation.organizationId,
         role: invitation.role
       }

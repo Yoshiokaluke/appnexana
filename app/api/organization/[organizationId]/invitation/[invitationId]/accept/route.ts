@@ -47,8 +47,8 @@ export async function POST(
         // 既存のメンバーシップを確認
         const existingMembership = await tx.organizationMembership.findUnique({
           where: {
-            userId_organizationId: {
-              userId: user.id,
+            clerkId_organizationId: {
+              clerkId: user.clerkId,
               organizationId: params.organizationId,
             },
           },
@@ -65,9 +65,9 @@ export async function POST(
         // メンバーシップを作成
         await tx.organizationMembership.create({
           data: {
-            userId: user.id,
+            clerkId: user.clerkId,
             organizationId: params.organizationId,
-            role: invitation.role,
+            role: invitation.role
           },
         });
 

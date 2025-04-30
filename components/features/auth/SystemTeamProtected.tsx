@@ -1,24 +1,41 @@
-import { auth } from '@clerk/nextjs/server'
-import { ReactNode } from 'react'
-import { redirect } from 'next/navigation'
-import { checkSystemTeamMember } from '@/lib/auth/roles'
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { checkSystemTeamRole } from '@/lib/auth/roles';
 
 interface SystemTeamProtectedProps {
-  children: ReactNode
+  children: React.ReactNode;
 }
 
-export const SystemTeamProtected = async ({ children }: SystemTeamProtectedProps) => {
-  const { userId } = await auth()
+export default function SystemTeamProtected({ children }: SystemTeamProtectedProps) {
+  const { userId } = useAuth();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!userId) {
-    redirect('/sign-in')
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!userId) {
+        setIsAuthorized(false);
+        setIsLoading(false);
+        return;
+      }
+
+      const isSystemTeam = await checkSystemTeamRole(userId);
+      setIsAuthorized(isSystemTeam);
+      setIsLoading(false);
+    };
+
+    checkAccess();
+  }, [userId]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  // システムチームメンバーチェック
-  const isSystemTeam = await checkSystemTeamMember(userId)
-  if (!isSystemTeam) {
-    redirect('/')
+  if (!isAuthorized) {
+    return <div>アクセス権限がありません</div>;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 } 

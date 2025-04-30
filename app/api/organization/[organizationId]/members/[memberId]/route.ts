@@ -85,14 +85,21 @@ export async function GET(
       return new NextResponse('組織IDとメンバーIDは必須です', { status: 400 });
     }
 
-    // システムチーム権限チェック
-    const isSystemTeamMember = await isSystemTeam();
+    // ユーザー情報を取得してシステムチーム権限を確認
+    const user = await prisma.user.findUnique({
+      where: { clerkId: clerkUserId },
+      select: { systemRole: true }
+    });
+
+    if (!user) {
+      return new NextResponse('ユーザーが見つかりません', { status: 404 });
+    }
 
     // 組織のadmin権限チェック
     const hasOrgAdminAccess = await checkOrganizationRole(clerkUserId, organizationId, 'admin');
 
     // どちらの権限もない場合はアクセス拒否
-    if (!isSystemTeamMember && !hasOrgAdminAccess) {
+    if (user.systemRole !== 'system_team' && !hasOrgAdminAccess) {
       return new NextResponse('Forbidden', { status: 403 });
     }
 
