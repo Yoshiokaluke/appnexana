@@ -48,8 +48,20 @@ export async function POST(request: Request) {
 
     if (!organizationId || !name || !location) {
       return NextResponse.json(
-        { error: '必須項目が不足しています' },
+        { error: '必須項目が不足しています', details: { organizationId, name, location } },
         { status: 400 }
+      );
+    }
+
+    // 組織の存在確認
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+    });
+
+    if (!organization) {
+      return NextResponse.json(
+        { error: '指定された組織が存在しません', organizationId },
+        { status: 404 }
       );
     }
 
@@ -76,7 +88,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating QR scanner:', error);
     return NextResponse.json(
-      { error: 'QRスキャナーの作成に失敗しました' },
+      { 
+        error: 'QRスキャナーの作成に失敗しました', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

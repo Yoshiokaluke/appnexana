@@ -96,7 +96,11 @@ export default function OrganizationsPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('QRスキャナーの作成に失敗しました');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('QRスキャナー作成エラー詳細:', errorData);
+        throw new Error(errorData.error || 'QRスキャナーの作成に失敗しました');
+      }
 
       await fetchQrScanners(selectedOrgId);
       setIsQrScannerModalOpen(false);
@@ -106,8 +110,8 @@ export default function OrganizationsPage() {
         location: '',
       });
     } catch (error) {
-      console.error('Error:', error);
-      alert('QRスキャナーの作成に失敗しました');
+      console.error('Error details:', error);
+      alert(error instanceof Error ? error.message : 'QRスキャナーの作成に失敗しました');
     } finally {
       setIsLoading(false);
     }
