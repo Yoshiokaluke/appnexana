@@ -21,11 +21,20 @@ export async function POST() {
       );
     }
 
+    console.log('Clerk user data:', {
+      userId,
+      email: user.emailAddresses[0]?.emailAddress,
+      firstName: user.firstName,
+      lastName: user.lastName
+    });
+
     // 既存のユーザーを確認
     const existingUser = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { systemRole: true }
     });
+
+    console.log('Existing user:', existingUser);
 
     // ユーザーを作成または更新
     const dbUser = await prisma.user.upsert({
@@ -37,7 +46,6 @@ export async function POST() {
         email: user.emailAddresses[0]?.emailAddress ?? '',
         firstName: user.firstName ?? null,
         lastName: user.lastName ?? null,
-        roles: [],
       },
       update: {
         email: user.emailAddresses[0]?.emailAddress ?? '',
@@ -50,8 +58,19 @@ export async function POST() {
     return NextResponse.json({ success: true, user: dbUser });
   } catch (error) {
     console.error('Error in register:', error);
+    // エラーの詳細をログに出力
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
     return NextResponse.json(
-      { error: '内部サーバーエラーが発生しました' },
+      { 
+        error: '内部サーバーエラーが発生しました',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

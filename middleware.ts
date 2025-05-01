@@ -68,7 +68,7 @@ const checkOrganizationAccess = async (userId: string | null, req: NextRequest) 
 };
 
 export default authMiddleware({
-  publicRoutes: ["/"],
+  publicRoutes: ["/", "/sign-in", "/sign-up"],
   afterAuth: async (auth, req) => {
     if (!auth.userId && !auth.isPublicRoute) {
       // 未認証の場合、現在のURLをクエリパラメータとして保存
@@ -93,13 +93,8 @@ export default authMiddleware({
 
 // 必要なパスのみをマッチさせる
 export const config = {
-  matcher: [
-    "/((?!.+\\.[\\w]+$|_next).*)",
-    "/",
-    "/(api|trpc)(.*)",
-  ],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
-
 export const checkSystemTeamAccess = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },

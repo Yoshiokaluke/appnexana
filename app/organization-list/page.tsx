@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 
 interface Organization {
   id: string;
@@ -12,6 +12,7 @@ interface Organization {
 export default function OrganizationListPage() {
   const router = useRouter();
   const { userId } = useAuth();
+  const { user, isLoaded } = useUser();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,6 +46,36 @@ export default function OrganizationListPage() {
       console.log('No userId available yet');
     }
   }, [userId]);
+
+  useEffect(() => {
+    const syncUserData = async () => {
+      if (!user) return;
+
+      try {
+        const response = await fetch(`/api/users/${user.id}/profile`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: user.emailAddresses[0]?.emailAddress || "",
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to sync user data");
+        }
+      } catch (error) {
+        console.error("Error syncing user data:", error);
+      }
+    };
+
+    if (isLoaded && user) {
+      syncUserData();
+    }
+  }, [user, isLoaded]);
 
   if (isLoading) {
     return (
