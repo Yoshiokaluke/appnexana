@@ -1,6 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { getUserRoles, type SystemRole, type OrganizationRole } from '@/lib/auth/roles'
+import { getUserRoles } from '@/lib/auth/roles'
 
 export default async function UserProfilePage({
   params,

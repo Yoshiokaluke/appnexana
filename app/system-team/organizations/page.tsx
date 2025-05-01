@@ -286,7 +286,9 @@ export default function OrganizationsPage() {
           <div key={org.id} className="border p-4 rounded">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h2 className="text-xl font-semibold">{org.name}</h2>
+                <Link href={`/organization/${org.id}`} className="text-xl font-semibold hover:text-blue-600">
+                  {org.name}
+                </Link>
                 <p>{org.address}</p>
                 <p>{org.managerName}</p>
               </div>

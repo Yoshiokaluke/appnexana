@@ -13,8 +13,10 @@ model User {
   email           String                   @unique
   firstName       String?
   lastName        String?
-  organizationId  String?
-  roles           String[]
+  gender          String?
+  age             Int?
+  profileImage    String?
+  snsLinks        Json?
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   systemRole      SystemRole?
@@ -55,6 +57,8 @@ model OrganizationProfile {
   organizationId String
   displayName    String?
   department     String?
+  profileImage   String?
+  introduction   String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id])
