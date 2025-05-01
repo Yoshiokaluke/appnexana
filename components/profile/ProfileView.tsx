@@ -13,6 +13,11 @@ import {
   LinkedinIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateSelect } from "@/components/ui/date-select";
 
 interface ProfileViewProps {
   user: {
@@ -38,7 +43,34 @@ type SnsLinks = {
   linkedin?: string;
 };
 
-export function ProfileView({ user, clerkId }: ProfileViewProps) {
+const SNS_PATTERNS = {
+  facebook: /^https?:\/\/(www\.)?(facebook|fb)\.com\/.+/,
+  linkedin: /^https?:\/\/(www\.)?linkedin\.com\/.+/,
+  instagram: /^https?:\/\/(www\.)?instagram\.com\/.+/,
+};
+
+interface SnsLink {
+  platform: 'facebook' | 'linkedin' | 'instagram';
+  url: string;
+  isEditing: boolean;
+  editValue: string;
+}
+
+export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
+  const [user, setUser] = useState(initialUser);
+  const [snsLinks, setSnsLinks] = useState<SnsLink[]>([
+    { platform: 'facebook', url: initialUser.profile?.snsLinks?.facebook || '', isEditing: false, editValue: initialUser.profile?.snsLinks?.facebook || '' },
+    { platform: 'linkedin', url: initialUser.profile?.snsLinks?.linkedin || '', isEditing: false, editValue: initialUser.profile?.snsLinks?.linkedin || '' },
+    { platform: 'instagram', url: initialUser.profile?.snsLinks?.instagram || '', isEditing: false, editValue: initialUser.profile?.snsLinks?.instagram || '' },
+  ]);
+
+  const [isEditingGender, setIsEditingGender] = useState(false);
+  const [isEditingBirthday, setIsEditingBirthday] = useState(false);
+  const [editingGender, setEditingGender] = useState(initialUser.profile?.gender || '');
+  const [editingBirthday, setEditingBirthday] = useState<Date | undefined>(
+    initialUser.profile?.birthday ? new Date(initialUser.profile.birthday) : undefined
+  );
+
   const formatDate = (date: Date | null | undefined) => {
     if (!date) return "未設定";
     return new Date(date).toLocaleDateString("ja-JP", {
@@ -58,6 +90,152 @@ export function ProfileView({ user, clerkId }: ProfileViewProps) {
         return "その他";
       default:
         return "未設定";
+    }
+  };
+
+  const validateUrl = (platform: keyof typeof SNS_PATTERNS, value: string) => {
+    if (value && !SNS_PATTERNS[platform].test(value)) {
+      toast.error("正しいURLを入力してください");
+      return false;
+    }
+    return true;
+  };
+
+  const handleEdit = (platform: SnsLink['platform']) => {
+    setSnsLinks(links => links.map(link => 
+      link.platform === platform 
+        ? { ...link, isEditing: true }
+        : link
+    ));
+  };
+
+  const handleCancel = (platform: SnsLink['platform']) => {
+    setSnsLinks(links => links.map(link => 
+      link.platform === platform 
+        ? { ...link, isEditing: false, editValue: link.url }
+        : link
+    ));
+  };
+
+  const handleSave = async (platform: SnsLink['platform']) => {
+    const link = snsLinks.find(l => l.platform === platform);
+    if (!link) return;
+
+    if (!validateUrl(platform, link.editValue)) return;
+
+    try {
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          snsLinks: {
+            ...user.profile?.snsLinks,
+            [platform]: link.editValue,
+          },
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile!,
+          snsLinks: {
+            ...prev.profile!.snsLinks,
+            [platform]: link.editValue,
+          },
+        },
+      }));
+
+      setSnsLinks(links => links.map(l => 
+        l.platform === platform 
+          ? { ...l, url: l.editValue, isEditing: false }
+          : l
+      ));
+
+      toast.success("SNSリンクを更新しました");
+    } catch {
+      toast.error("更新に失敗しました");
+    }
+  };
+
+  const handleChange = (platform: SnsLink['platform'], value: string) => {
+    setSnsLinks(links => links.map(link => 
+      link.platform === platform 
+        ? { ...link, editValue: value }
+        : link
+    ));
+  };
+
+  const getSnsIcon = (platform: SnsLink['platform']) => {
+    switch (platform) {
+      case 'facebook':
+        return <FacebookIcon className="w-5 h-5 text-blue-600" />;
+      case 'linkedin':
+        return <LinkedinIcon className="w-5 h-5 text-blue-800" />;
+      case 'instagram':
+        return <InstagramIcon className="w-5 h-5 text-pink-600" />;
+    }
+  };
+
+  const handleSaveGender = async () => {
+    try {
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gender: editingGender,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile!,
+          gender: editingGender,
+        },
+      }));
+
+      toast.success("性別を更新しました");
+      setIsEditingGender(false);
+    } catch {
+      toast.error("更新に失敗しました");
+    }
+  };
+
+  const handleSaveBirthday = async () => {
+    try {
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dateOfBirth: editingBirthday || null,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile!,
+          birthday: editingBirthday || null,
+        },
+      }));
+
+      toast.success("生年月日を更新しました");
+      setIsEditingBirthday(false);
+    } catch {
+      toast.error("更新に失敗しました");
     }
   };
 
@@ -110,13 +288,60 @@ export function ProfileView({ user, clerkId }: ProfileViewProps) {
               </div>
             </div>
 
-            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
               <div className="p-3 bg-purple-100 rounded-full shrink-0">
                 <Users className="w-5 h-5 text-purple-600" />
               </div>
-              <div className="min-w-0">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-500">性別</p>
-                <p className="font-medium text-gray-900">{getGenderLabel(user.profile?.gender)}</p>
+                {isEditingGender ? (
+                  <div className="flex items-center space-x-2">
+                    <Select
+                      value={editingGender}
+                      onValueChange={setEditingGender}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="性別を選択" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">男性</SelectItem>
+                        <SelectItem value="female">女性</SelectItem>
+                        <SelectItem value="other">その他</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSaveGender}
+                      >
+                        保存
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingGender(false);
+                          setEditingGender(user.profile?.gender || '');
+                        }}
+                      >
+                        キャンセル
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-900">{getGenderLabel(user.profile?.gender)}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingGender(true)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -130,13 +355,51 @@ export function ProfileView({ user, clerkId }: ProfileViewProps) {
               </div>
             </div>
 
-            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
               <div className="p-3 bg-purple-100 rounded-full shrink-0">
                 <CalendarIcon className="w-5 h-5 text-purple-600" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-500">生年月日</p>
-                <p className="font-medium text-gray-900">{formatDate(user.profile?.birthday)}</p>
+                {isEditingBirthday ? (
+                  <div className="flex items-center space-x-2">
+                    <DateSelect
+                      value={editingBirthday}
+                      onChange={setEditingBirthday}
+                    />
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSaveBirthday}
+                      >
+                        保存
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingBirthday(false);
+                          setEditingBirthday(user.profile?.birthday ? new Date(user.profile.birthday) : undefined);
+                        }}
+                      >
+                        キャンセル
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-900">{formatDate(user.profile?.birthday)}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingBirthday(true)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -152,49 +415,69 @@ export function ProfileView({ user, clerkId }: ProfileViewProps) {
             SNSリンク
           </h2>
           <div className="space-y-4">
-            {user.profile?.snsLinks?.facebook && (
-              <motion.a
-                whileHover={{ scale: 1.02 }}
-                href={user.profile.snsLinks.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors group"
-              >
-                <FacebookIcon className="w-5 h-5 text-blue-600 mr-3 shrink-0" />
-                <span className="text-gray-700 group-hover:text-blue-600 transition-colors break-all">{user.profile.snsLinks.facebook}</span>
-              </motion.a>
-            )}
-            {user.profile?.snsLinks?.instagram && (
-              <motion.a
-                whileHover={{ scale: 1.02 }}
-                href={user.profile.snsLinks.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-pink-50 transition-colors group"
-              >
-                <InstagramIcon className="w-5 h-5 text-pink-600 mr-3 shrink-0" />
-                <span className="text-gray-700 group-hover:text-pink-600 transition-colors break-all">{user.profile.snsLinks.instagram}</span>
-              </motion.a>
-            )}
-            {user.profile?.snsLinks?.linkedin && (
-              <motion.a
-                whileHover={{ scale: 1.02 }}
-                href={user.profile.snsLinks.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors group"
-              >
-                <LinkedinIcon className="w-5 h-5 text-blue-800 mr-3 shrink-0" />
-                <span className="text-gray-700 group-hover:text-blue-800 transition-colors break-all">{user.profile.snsLinks.linkedin}</span>
-              </motion.a>
-            )}
-            {!user.profile?.snsLinks?.facebook &&
-              !user.profile?.snsLinks?.instagram &&
-              !user.profile?.snsLinks?.linkedin && (
-                <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">SNSリンクは設定されていません</p>
-                </div>
-              )}
+            {snsLinks.map(link => (
+              <div key={link.platform} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg group">
+                {link.isEditing ? (
+                  <>
+                    <div className="p-3 bg-gray-100 rounded-full shrink-0">
+                      {getSnsIcon(link.platform)}
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        value={link.editValue}
+                        onChange={(e) => handleChange(link.platform, e.target.value)}
+                        placeholder={`https://www.${link.platform}.com/username`}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSave(link.platform)}
+                      >
+                        保存
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCancel(link.platform)}
+                      >
+                        キャンセル
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-3 bg-gray-100 rounded-full shrink-0">
+                      {getSnsIcon(link.platform)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {link.url ? (
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-700 hover:text-blue-600 transition-colors truncate block"
+                        >
+                          {link.url}
+                        </a>
+                      ) : (
+                        <span className="text-gray-500">未設定</span>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(link.platform)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         </motion.div>
       </motion.div>
