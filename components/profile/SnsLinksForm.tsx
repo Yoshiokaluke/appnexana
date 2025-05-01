@@ -5,9 +5,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 const SNS_PATTERNS = {
-  facebook: /^https:\/\/(www\.)?facebook\.com\/[a-zA-Z0-9.]+$/,
-  linkedin: /^https:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+$/,
-  instagram: /^https:\/\/(www\.)?instagram\.com\/[a-zA-Z0-9._]+$/,
+  facebook: /^https?:\/\/(www\.)?(facebook|fb)\.com\/.+/,
+  linkedin: /^https?:\/\/(www\.)?linkedin\.com\/.+/,
+  instagram: /^https?:\/\/(www\.)?instagram\.com\/.+/,
 };
 
 interface SnsLinksFormProps {
@@ -28,15 +28,16 @@ export function SnsLinksForm({ snsLinks, setSnsLinks }: SnsLinksFormProps) {
     platform: keyof typeof snsLinks,
     value: string
   ) => {
-    if (value && !SNS_PATTERNS[platform].test(value)) {
-      toast.error("正しいURLを入力してください");
-      return;
-    }
-
     setSnsLinks({
       ...snsLinks,
       [platform]: value,
     });
+  };
+
+  const validateUrl = (platform: keyof typeof snsLinks, value: string) => {
+    if (value && !SNS_PATTERNS[platform].test(value)) {
+      toast.error("正しいURLを入力してください");
+    }
   };
 
   return (
@@ -50,6 +51,7 @@ export function SnsLinksForm({ snsLinks, setSnsLinks }: SnsLinksFormProps) {
             placeholder="https://www.facebook.com/username"
             value={snsLinks.facebook}
             onChange={(e) => handleSnsLinkChange("facebook", e.target.value)}
+            onBlur={(e) => validateUrl("facebook", e.target.value)}
           />
         </div>
         <div className="space-y-2">
@@ -59,6 +61,7 @@ export function SnsLinksForm({ snsLinks, setSnsLinks }: SnsLinksFormProps) {
             placeholder="https://www.linkedin.com/in/username"
             value={snsLinks.linkedin}
             onChange={(e) => handleSnsLinkChange("linkedin", e.target.value)}
+            onBlur={(e) => validateUrl("linkedin", e.target.value)}
           />
         </div>
         <div className="space-y-2">
@@ -68,6 +71,7 @@ export function SnsLinksForm({ snsLinks, setSnsLinks }: SnsLinksFormProps) {
             placeholder="https://www.instagram.com/username"
             value={snsLinks.instagram}
             onChange={(e) => handleSnsLinkChange("instagram", e.target.value)}
+            onBlur={(e) => validateUrl("instagram", e.target.value)}
           />
         </div>
       </div>

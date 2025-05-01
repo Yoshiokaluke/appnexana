@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { SnsLinksForm } from "./index";
+import { SnsLinksForm } from "./SnsLinksForm";
 import {
   Select,
   SelectContent,
@@ -148,7 +148,7 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel>苗字</FormLabel>
                   <FormControl>
-                    <Input placeholder="山田" {...field} />
+                    <Input placeholder="山田" {...field} disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -161,7 +161,7 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel>名前</FormLabel>
                   <FormControl>
-                    <Input placeholder="太郎" {...field} />
+                    <Input placeholder="太郎" {...field} disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -216,7 +216,6 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
                     <DateSelect
                       value={field.value}
                       onChange={field.onChange}
-                      defaultYear={1997}
                     />
                   </FormControl>
                   <FormMessage />
@@ -224,12 +223,14 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
               )}
             />
           </div>
+        </div>
 
+        <div className="space-y-6">
           <SnsLinksForm snsLinks={snsLinks} setSnsLinks={setSnsLinks} />
         </div>
 
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "保存中..." : "保存"}
+          {isLoading ? "更新中..." : "更新する"}
         </Button>
       </form>
     </Form>
