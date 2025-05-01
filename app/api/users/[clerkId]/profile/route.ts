@@ -52,7 +52,6 @@ export async function PATCH(
       email,
       gender,
       dateOfBirth,
-      profileImage,
       snsLinks,
     } = body;
 
@@ -77,13 +76,11 @@ export async function PATCH(
           clerkId: userId,
           gender,
           birthday: dateOfBirth,
-          profileImage,
           snsLinks,
         },
         update: {
           gender,
           birthday: dateOfBirth,
-          profileImage,
           snsLinks,
         },
       });
@@ -95,5 +92,38 @@ export async function PATCH(
   } catch (error) {
     console.error("[PROFILE_PATCH]", error);
     return new NextResponse("Internal Error", { status: 500 });
+  }
+}
+
+export async function POST(
+  req: Request,
+  { params }: { params: { clerkId: string } }
+) {
+  try {
+    const { clerkId } = params;
+    const { birthday, gender, snsLinks } = await req.json();
+
+    const profile = await prismaDb.profile.upsert({
+      where: { clerkId },
+      update: {
+        birthday,
+        gender,
+        snsLinks,
+      },
+      create: {
+        clerkId,
+        birthday,
+        gender,
+        snsLinks,
+      },
+    });
+
+    return NextResponse.json(profile);
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return NextResponse.json(
+      { error: "Failed to update profile" },
+      { status: 500 }
+    );
   }
 } 

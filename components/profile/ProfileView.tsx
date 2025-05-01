@@ -14,16 +14,28 @@ import {
 } from "lucide-react";
 
 interface ProfileViewProps {
-  user: User & {
+  user: {
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
     profile: {
-      profileImage: string | null;
+      id: string;
+      clerkId: string;
       birthday: Date | null;
       gender: string | null;
       snsLinks: any;
+      createdAt: Date;
+      updatedAt: Date;
     } | null;
   };
   clerkId: string;
 }
+
+type SnsLinks = {
+  facebook?: string;
+  instagram?: string;
+  linkedin?: string;
+};
 
 export function ProfileView({ user, clerkId }: ProfileViewProps) {
   const formatDate = (date: Date | null | undefined) => {
@@ -55,10 +67,9 @@ export function ProfileView({ user, clerkId }: ProfileViewProps) {
         <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg" />
         <div className="absolute -bottom-16 left-8 flex items-end space-x-4">
           <Avatar className="h-32 w-32 border-4 border-white">
-            <AvatarImage src={user.profile?.profileImage || ""} />
             <AvatarFallback>
-              {user.firstName?.[0]}
-              {user.lastName?.[0]}
+              {user.firstName?.charAt(0)}
+              {user.lastName?.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div className="mb-4 text-white">

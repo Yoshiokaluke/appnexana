@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ProfileImageUpload, SnsLinksForm } from "./index";
+import { SnsLinksForm } from "./index";
 import {
   Select,
   SelectContent,
@@ -35,6 +35,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ja } from "date-fns/locale";
 import { DateSelect } from "@/components/ui/date-select";
+import { Label } from "@/components/ui/label";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, "名前を入力してください"),
@@ -46,17 +47,22 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
+type SnsLinks = {
+  facebook: string;
+  instagram: string;
+  linkedin: string;
+};
+
 interface ProfileFormProps {
   clerkId: string;
 }
 
 export function ProfileForm({ clerkId }: ProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [snsLinks, setSnsLinks] = useState({
+  const [snsLinks, setSnsLinks] = useState<SnsLinks>({
     facebook: "",
-    linkedin: "",
     instagram: "",
+    linkedin: "",
   });
 
   const form = useForm<ProfileFormValues>({
@@ -87,10 +93,6 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
           dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
         });
 
-        if (data.profileImage) {
-          setProfileImage(data.profileImage);
-        }
-
         if (data.snsLinks) {
           setSnsLinks({
             facebook: data.snsLinks.facebook || "",
@@ -107,7 +109,7 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
     fetchProfile();
   }, [clerkId, form]);
 
-  async function onSubmit(data: ProfileFormValues) {
+  const onSubmit = async (data: ProfileFormValues) => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/users/${clerkId}/profile`, {
@@ -117,7 +119,6 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
         },
         body: JSON.stringify({
           ...data,
-          profileImage,
           snsLinks,
         }),
       });
@@ -133,17 +134,12 @@ export function ProfileForm({ clerkId }: ProfileFormProps) {
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="space-y-4">
-          <ProfileImageUpload
-            profileImage={profileImage}
-            setProfileImage={setProfileImage}
-          />
-
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
