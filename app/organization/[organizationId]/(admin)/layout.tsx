@@ -4,11 +4,13 @@ import { checkOrganizationAdmin } from "@/lib/auth/roles";
 
 export default async function AdminLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: { organizationId: string };
 }) {
   const { userId } = auth();
-  const organizationId = window.location.pathname.split("/")[2];
+  const organizationId = params.organizationId;
 
   if (!userId) {
     redirect("/sign-in");
@@ -17,7 +19,7 @@ export default async function AdminLayout({
   // 管理者権限またはシステムチーム権限を確認
   const isAdmin = await checkOrganizationAdmin(userId, organizationId);
   if (!isAdmin) {
-    redirect(`/organization/${organizationId}/member/toppage`);
+    redirect(`/organization/${organizationId}/dashboard`);
   }
 
   return <>{children}</>;

@@ -58,8 +58,6 @@ model OrganizationProfile {
   organizationId String
   displayName    String?
   department     String?
-  position       String?
-  phoneNumber    String?
   introduction   String?
   profileImage   String?
   createdAt      DateTime     @default(now())
