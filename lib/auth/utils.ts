@@ -2,17 +2,13 @@ import { auth } from '@clerk/nextjs/server'
 import { SystemRoleType, OrganizationRoleType, UserRole } from './roles'
 import { AuthError, AuthErrorType } from './errors'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
+import { getAuthenticatedUser, checkOrganizationAdmin } from './roles'
 
 export async function checkUserRole(userId: string, requiredRole?: UserRole): Promise<boolean> {
   if (!requiredRole) return true
   
   // TODO: DBからユーザーのロール情報を取得
-  return true
-}
-
-export async function checkOrganizationAdmin(userId: string, organizationId: string): Promise<boolean> {
-  // TODO: DBから組織の管理者権限をチェック
   return true
 }
 
@@ -30,31 +26,7 @@ export async function requireAuth() {
 }
 
 // 認証済みユーザーの情報を取得
-export async function getAuthenticatedUser() {
-  try {
-    const { userId } = await auth()
-    if (!userId) {
-      return null
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      include: {
-        memberships: {
-          select: {
-            organizationId: true,
-            role: true
-          }
-        }
-      }
-    })
-
-    return user
-  } catch (error) {
-    console.error('Error getting authenticated user:', error)
-    return null
-  }
-}
+export { getAuthenticatedUser, checkOrganizationAdmin }
 
 // 組織のメンバーシップを取得
 export async function getOrganizationMembership(userId: string, organizationId: string) {
@@ -140,4 +112,18 @@ export async function withOrganizationAdminAuth(organizationId: string, handler:
 
     return await handler(userId)
   })
+}
+
+// 例: /api/organization/[organizationId]/departments/route.ts
+export async function GET(req: NextRequest, { params }: { params: { organizationId: string } }) {
+  const { organizationId } = params;
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+  console.log('認証ユーザー:', user);
+  console.log('組織ID:', organizationId);
+  const isAdmin = await checkOrganizationAdmin(user.id, organizationId);
+  console.log('isAdmin:', isAdmin);
+  // ...
 } 

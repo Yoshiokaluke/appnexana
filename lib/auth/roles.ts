@@ -118,27 +118,43 @@ export const checkSystemTeamRole = async (userId: string): Promise<boolean> => {
 // 組織管理者のチェック
 export async function checkOrganizationAdmin(userId: string, organizationId: string) {
   try {
+    console.log('管理者権限チェック - ユーザーID:', userId, '組織ID:', organizationId);
+
+    // まずシステムチーム権限をチェック
+    const user = await prisma.user.findUnique({ 
+      where: { clerkId: userId },
+      select: { systemRole: true }
+    });
+    console.log('ユーザー情報:', user);
+
+    if (user?.systemRole === 'system_team') {
+      console.log('管理者権限あり（システムチーム）');
+      return true;
+    }
+
+    // 次に組織の管理者権限をチェック
     const membership = await prisma.organizationMembership.findFirst({
       where: {
         user: { clerkId: userId },
         organizationId,
         role: 'admin'
+      },
+      include: {
+        user: true
       }
-    })
+    });
+    console.log('メンバーシップ:', membership);
+
     if (membership) {
+      console.log('管理者権限あり（メンバーシップ）');
       return true;
     }
 
-    // system-team権限も許可
-    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (user?.systemRole === 'system_team') {
-      return true;
-    }
-
+    console.log('管理者権限なし');
     return false;
   } catch (error) {
-    console.error('Error checking organization admin:', error)
-    return false
+    console.error('管理者権限チェックエラー:', error);
+    return false;
   }
 }
 

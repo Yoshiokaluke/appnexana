@@ -19,7 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <body>
-        <ClerkProvider>
+        <ClerkProvider
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+          afterSignInUrl="/organization-list"
+          afterSignUpUrl="/organization-list"
+        >
           <AuthSync />
           <header className="flex justify-end items-center p-4 gap-4 h-16">
             <SignedOut>

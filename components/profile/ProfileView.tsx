@@ -1,6 +1,5 @@
 "use client";
 
-import { User as UserType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarIcon, Mail, MapPin, Pencil, User, Users, Lock } from "lucide-react";

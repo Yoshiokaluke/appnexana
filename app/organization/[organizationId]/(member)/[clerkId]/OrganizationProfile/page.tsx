@@ -51,6 +51,21 @@ const ActionButtons = ({ onSave, onCancel, disabled }: { onSave: () => void; onC
   </div>
 );
 
+// 部署リスト取得用フック
+function useDepartments(organizationId: string) {
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch(`/api/organization/${organizationId}/departments`)
+      .then(res => res.json())
+      .then(data => {
+        setDepartments(data);
+        setLoading(false);
+      });
+  }, [organizationId]);
+  return { departments, loading };
+}
+
 export default function OrganizationProfilePage() {
   const params = useParams();
   const { user: clerkUser } = useUser();
@@ -74,6 +89,7 @@ export default function OrganizationProfilePage() {
     instagram: '',
     linkedin: '',
   });
+  const [editingDepartmentId, setEditingDepartmentId] = useState<string>('');
 
   useEffect(() => {
     fetchData();
@@ -108,6 +124,7 @@ export default function OrganizationProfilePage() {
         instagram: '',
         linkedin: '',
       });
+      setEditingDepartmentId(organizationProfile?.department || '');
     } catch (error) {
       console.error('Error:', error);
       toast.error('データの取得に失敗しました');
@@ -149,19 +166,14 @@ export default function OrganizationProfilePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          department: editingDepartment,
+          departmentId: editingDepartmentId,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error('更新に失敗しました');
-      }
-
-      setOrganizationProfile(prev => prev ? { ...prev, department: editingDepartment } : null);
+      if (!response.ok) throw new Error('更新に失敗しました');
       setIsEditingDepartment(false);
       toast.success('部署を更新しました');
+      fetchData();
     } catch (error) {
-      console.error('Error:', error);
       toast.error('更新に失敗しました');
     }
   };
@@ -348,16 +360,16 @@ export default function OrganizationProfilePage() {
               <p className="text-sm text-gray-500">部署</p>
               {isEditingDepartment ? (
                 <div className="relative">
-                  <Input
-                    value={editingDepartment}
-                    onChange={(e) => setEditingDepartment(e.target.value)}
-                    className="w-full"
+                  <DepartmentSelect
+                    organizationId={Array.isArray(params.organizationId) ? params.organizationId[0] : params.organizationId}
+                    departmentId={editingDepartmentId}
+                    onChange={setEditingDepartmentId}
                   />
                   <ActionButtons
                     onSave={handleSaveDepartment}
                     onCancel={() => {
                       setIsEditingDepartment(false);
-                      setEditingDepartment(organizationProfile?.department || '');
+                      setEditingDepartmentId(organizationProfile?.department || '');
                     }}
                   />
                 </div>
@@ -591,5 +603,26 @@ export default function OrganizationProfilePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// 部署セレクトコンポーネント
+function DepartmentSelect({ organizationId, departmentId, onChange }: { organizationId: string, departmentId: string, onChange: (id: string) => void }) {
+  const { departments, loading } = useDepartments(organizationId);
+  if (loading) return <div>読み込み中...</div>;
+  if (!Array.isArray(departments)) return <div>部署情報の取得に失敗しました</div>;
+  return (
+    <Select value={departmentId} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="部署を選択" />
+      </SelectTrigger>
+      <SelectContent>
+        {departments.map((dept) => (
+          <SelectItem key={dept.id} value={dept.id}>
+            {dept.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 } 
