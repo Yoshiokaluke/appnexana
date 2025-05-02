@@ -5,7 +5,7 @@ import { getAuthenticatedUser, checkOrganizationAdmin } from '@/lib/auth/roles';
 export async function PATCH(req: NextRequest, { params }: { params: { organizationId: string, departmentId: string } }) {
   const { organizationId, departmentId } = params;
   const user = await getAuthenticatedUser();
-  if (!user || !(await checkOrganizationAdmin(user.id, organizationId))) {
+  if (!user || !(await checkOrganizationAdmin(user.clerkId, organizationId))) {
     return NextResponse.json({ error: '権限がありません' }, { status: 403 });
   }
   const { name, order } = await req.json();
@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { organizati
 export async function DELETE(req: NextRequest, { params }: { params: { organizationId: string, departmentId: string } }) {
   const { organizationId, departmentId } = params;
   const user = await getAuthenticatedUser();
-  if (!user || !(await checkOrganizationAdmin(user.id, organizationId))) {
+  if (!user || !(await checkOrganizationAdmin(user.clerkId, organizationId))) {
     return NextResponse.json({ error: '権限がありません' }, { status: 403 });
   }
   const dept = await prisma.organizationDepartment.findUnique({ where: { id: departmentId } });

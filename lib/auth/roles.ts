@@ -116,13 +116,13 @@ export const checkSystemTeamRole = async (userId: string): Promise<boolean> => {
 }
 
 // 組織管理者のチェック
-export async function checkOrganizationAdmin(userId: string, organizationId: string) {
+export async function checkOrganizationAdmin(clerkId: string, organizationId: string) {
   try {
-    console.log('管理者権限チェック - ユーザーID:', userId, '組織ID:', organizationId);
+    console.log('管理者権限チェック - ユーザーID:', clerkId, '組織ID:', organizationId);
 
     // まずシステムチーム権限をチェック
     const user = await prisma.user.findUnique({ 
-      where: { clerkId: userId },
+      where: { clerkId },
       select: { systemRole: true }
     });
     console.log('ユーザー情報:', user);
@@ -135,7 +135,7 @@ export async function checkOrganizationAdmin(userId: string, organizationId: str
     // 次に組織の管理者権限をチェック
     const membership = await prisma.organizationMembership.findFirst({
       where: {
-        user: { clerkId: userId },
+        user: { clerkId },
         organizationId,
         role: 'admin'
       },
@@ -274,7 +274,10 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser | null> 
 
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
-      include: {
+      select: {
+        id: true,
+        clerkId: true,
+        systemRole: true,
         memberships: {
           select: {
             organizationId: true,
@@ -290,7 +293,7 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser | null> 
       id: user.id,
       clerkId: user.clerkId,
       systemRole: user.systemRole,
-      organizationMemberships: user.memberships.map((m: { organizationId: string; role: OrganizationRoleType }) => ({
+      organizationMemberships: user.memberships.map((m) => ({
         organizationId: m.organizationId,
         role: m.role
       }))
