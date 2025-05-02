@@ -64,7 +64,7 @@ export function DateSelect({ value, onChange, defaultYear = 1997 }: DateSelectPr
   };
 
   return (
-    <div className="flex gap-2 items-end">
+    <div className="flex flex-col gap-2 items-start">
       <div className="flex flex-col gap-1.5">
         <Label className="text-xs">年</Label>
         <Input
@@ -74,7 +74,7 @@ export function DateSelect({ value, onChange, defaultYear = 1997 }: DateSelectPr
           placeholder="1997"
           value={year}
           onChange={handleYearChange}
-          className="w-[80px]"
+          className="w-16"
           maxLength={4}
         />
       </div>
@@ -87,7 +87,7 @@ export function DateSelect({ value, onChange, defaultYear = 1997 }: DateSelectPr
           placeholder="01"
           value={month}
           onChange={handleMonthChange}
-          className="w-[60px]"
+          className="w-12"
           maxLength={2}
         />
       </div>
@@ -100,7 +100,7 @@ export function DateSelect({ value, onChange, defaultYear = 1997 }: DateSelectPr
           placeholder="01"
           value={day}
           onChange={handleDayChange}
-          className="w-[60px]"
+          className="w-12"
           maxLength={2}
         />
       </div>

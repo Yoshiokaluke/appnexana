@@ -43,6 +43,14 @@ type User = {
   } | null;
 };
 
+// ボタン共通スタイル
+const ActionButtons = ({ onSave, onCancel, disabled }: { onSave: () => void; onCancel: () => void; disabled?: boolean }) => (
+  <div className="flex justify-end gap-2 mt-2">
+    <Button type="button" variant="default" size="sm" onClick={onSave} disabled={disabled}>保存</Button>
+    <Button type="button" variant="outline" size="sm" onClick={onCancel}>キャンセル</Button>
+  </div>
+);
+
 export default function OrganizationProfilePage() {
   const params = useParams();
   const { user: clerkUser } = useUser();
@@ -301,30 +309,19 @@ export default function OrganizationProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-500">表示名</p>
               {isEditingDisplayName ? (
-                <div className="flex items-center space-x-2">
+                <div className="relative">
                   <Input
                     value={editingDisplayName}
                     onChange={(e) => setEditingDisplayName(e.target.value)}
+                    className="w-full"
                   />
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveDisplayName}
-                    >
-                      保存
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingDisplayName(false);
-                        setEditingDisplayName(organizationProfile?.displayName || '');
-                      }}
-                    >
-                      キャンセル
-                    </Button>
-                  </div>
+                  <ActionButtons
+                    onSave={handleSaveDisplayName}
+                    onCancel={() => {
+                      setIsEditingDisplayName(false);
+                      setEditingDisplayName(organizationProfile?.displayName || '');
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
@@ -350,30 +347,19 @@ export default function OrganizationProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-500">部署</p>
               {isEditingDepartment ? (
-                <div className="flex items-center space-x-2">
+                <div className="relative">
                   <Input
                     value={editingDepartment}
                     onChange={(e) => setEditingDepartment(e.target.value)}
+                    className="w-full"
                   />
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveDepartment}
-                    >
-                      保存
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingDepartment(false);
-                        setEditingDepartment(organizationProfile?.department || '');
-                      }}
-                    >
-                      キャンセル
-                    </Button>
-                  </div>
+                  <ActionButtons
+                    onSave={handleSaveDepartment}
+                    onCancel={() => {
+                      setIsEditingDepartment(false);
+                      setEditingDepartment(organizationProfile?.department || '');
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
@@ -399,30 +385,19 @@ export default function OrganizationProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-500">自己紹介</p>
               {isEditingIntroduction ? (
-                <div className="flex flex-col space-y-2">
+                <div className="relative">
                   <Textarea
                     value={editingIntroduction}
                     onChange={(e) => setEditingIntroduction(e.target.value)}
+                    className="w-full"
                   />
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveIntroduction}
-                    >
-                      保存
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingIntroduction(false);
-                        setEditingIntroduction(organizationProfile?.introduction || '');
-                      }}
-                    >
-                      キャンセル
-                    </Button>
-                  </div>
+                  <ActionButtons
+                    onSave={handleSaveIntroduction}
+                    onCancel={() => {
+                      setIsEditingIntroduction(false);
+                      setEditingIntroduction(organizationProfile?.introduction || '');
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
@@ -448,35 +423,25 @@ export default function OrganizationProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-500">生年月日</p>
               {isEditingBirthday ? (
-                <div className="flex items-center space-x-2">
-                  <DateSelect
-                    value={editingBirthday}
-                    onChange={(date) => {
-                      if (date?.getTime() !== editingBirthday?.getTime()) {
-                        setEditingBirthday(date);
-                      }
-                    }}
-                    defaultYear={1997}
-                  />
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveBirthday}
-                    >
-                      保存
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingBirthday(false);
-                        setEditingBirthday(user?.profile?.birthday ? new Date(user.profile.birthday) : undefined);
+                <div className="relative">
+                  <div className="flex flex-col md:flex-row gap-2 w-full">
+                    <DateSelect
+                      value={editingBirthday}
+                      onChange={(date) => {
+                        if (date?.getTime() !== editingBirthday?.getTime()) {
+                          setEditingBirthday(date);
+                        }
                       }}
-                    >
-                      キャンセル
-                    </Button>
+                      defaultYear={1997}
+                    />
                   </div>
+                  <ActionButtons
+                    onSave={handleSaveBirthday}
+                    onCancel={() => {
+                      setIsEditingBirthday(false);
+                      setEditingBirthday(user?.profile?.birthday ? new Date(user.profile.birthday) : undefined);
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
@@ -504,7 +469,7 @@ export default function OrganizationProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-500">性別</p>
               {isEditingGender ? (
-                <div className="flex items-center space-x-2">
+                <div className="relative">
                   <Select
                     value={editingGender}
                     onValueChange={setEditingGender}
@@ -518,25 +483,13 @@ export default function OrganizationProfilePage() {
                       <SelectItem value="other">その他</SelectItem>
                     </SelectContent>
                   </Select>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveGender}
-                    >
-                      保存
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingGender(false);
-                        setEditingGender(user?.profile?.gender || '');
-                      }}
-                    >
-                      キャンセル
-                    </Button>
-                  </div>
+                  <ActionButtons
+                    onSave={handleSaveGender}
+                    onCancel={() => {
+                      setIsEditingGender(false);
+                      setEditingGender(user?.profile?.gender || '');
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
@@ -568,34 +521,22 @@ export default function OrganizationProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-500">SNSリンク</p>
               {isEditingSnsLinks ? (
-                <div className="flex flex-col space-y-2">
+                <div className="relative">
                   <SnsLinksForm
                     snsLinks={editingSnsLinks}
                     setSnsLinks={setEditingSnsLinks}
                   />
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveSnsLinks}
-                    >
-                      保存
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingSnsLinks(false);
-                        setEditingSnsLinks(user?.profile?.snsLinks || {
-                          facebook: '',
-                          instagram: '',
-                          linkedin: '',
-                        });
-                      }}
-                    >
-                      キャンセル
-                    </Button>
-                  </div>
+                  <ActionButtons
+                    onSave={handleSaveSnsLinks}
+                    onCancel={() => {
+                      setIsEditingSnsLinks(false);
+                      setEditingSnsLinks(user?.profile?.snsLinks || {
+                        facebook: '',
+                        instagram: '',
+                        linkedin: '',
+                      });
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
