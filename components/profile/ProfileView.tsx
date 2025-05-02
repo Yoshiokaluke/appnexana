@@ -3,7 +3,7 @@
 import { User as UserType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarIcon, Mail, MapPin, Pencil, User, Users } from "lucide-react";
+import { CalendarIcon, Mail, MapPin, Pencil, User, Users, Lock } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +13,12 @@ import {
   LinkedinIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateSelect } from "@/components/ui/date-select";
+import { useUser } from "@clerk/nextjs";
 
 interface ProfileViewProps {
   user: {
@@ -57,6 +58,7 @@ interface SnsLink {
 }
 
 export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
+  const { user: clerkUser } = useUser();
   const [user, setUser] = useState(initialUser);
   const [snsLinks, setSnsLinks] = useState<SnsLink[]>([
     { platform: 'facebook', url: initialUser.profile?.snsLinks?.facebook || '', isEditing: false, editValue: initialUser.profile?.snsLinks?.facebook || '' },
@@ -70,6 +72,24 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
   const [editingBirthday, setEditingBirthday] = useState<Date | undefined>(
     initialUser.profile?.birthday ? new Date(initialUser.profile.birthday) : undefined
   );
+
+  const [isPasswordChangeVisible, setIsPasswordChangeVisible] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  useEffect(() => {
+    // Google認証ユーザーの場合は、パスワード変更セクションを非表示にする
+    const checkAuthProvider = async () => {
+      if (clerkUser) {
+        const externalAccounts = await clerkUser.externalAccounts;
+        // 外部認証アカウントがない場合（メール/パスワード認証のみ）はパスワード変更を表示
+        setIsPasswordChangeVisible(externalAccounts.length === 0);
+      }
+    };
+    checkAuthProvider();
+  }, [clerkUser]);
 
   const formatDate = (date: Date | null | undefined) => {
     if (!date) return "未設定";
@@ -236,6 +256,29 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
       setIsEditingBirthday(false);
     } catch {
       toast.error("更新に失敗しました");
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("新しいパスワードと確認用パスワードが一致しません");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await clerkUser?.updatePassword({
+        currentPassword,
+        newPassword,
+      });
+      toast.success("パスワードを更新しました");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      toast.error("パスワードの更新に失敗しました");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -480,6 +523,64 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
             ))}
           </div>
         </motion.div>
+
+        {isPasswordChangeVisible && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white rounded-xl shadow-sm p-6 md:p-8 hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center space-x-2 mb-6">
+              <Lock className="w-5 h-5 text-purple-600" />
+              <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                パスワード変更
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  現在のパスワード
+                </label>
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  新しいパスワード
+                </label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  新しいパスワード（確認）
+                </label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <Button
+                onClick={handlePasswordChange}
+                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                className="w-full"
+              >
+                {isChangingPassword ? "更新中..." : "パスワードを変更"}
+              </Button>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

@@ -7,7 +7,7 @@ import { checkOrganizationRole } from '@/app/lib/auth';
 // メンバーの削除
 export async function DELETE(
   req: Request,
-  { params }: { params: { organizationId: string; memberId: string } }
+  { params }: { params: { organizationId: string; clerkId: string } }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
@@ -15,8 +15,8 @@ export async function DELETE(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { organizationId, memberId } = params;
-    if (!organizationId || !memberId) {
+    const { organizationId, clerkId } = params;
+    if (!organizationId || !clerkId) {
       return new NextResponse('組織IDとメンバーIDは必須です', { status: 400 });
     }
 
@@ -32,8 +32,11 @@ export async function DELETE(
     }
 
     // 削除対象のメンバーシップを取得
-    const targetMembership = await prisma.organizationMembership.findUnique({
-      where: { id: memberId },
+    const targetMembership = await prisma.organizationMembership.findFirst({
+      where: { 
+        user: { clerkId },
+        organizationId
+      },
       include: {
         user: true
       }
@@ -59,12 +62,12 @@ export async function DELETE(
 
     // メンバーシップの削除
     await prisma.organizationMembership.delete({
-      where: { id: memberId }
+      where: { id: targetMembership.id }
     });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error('Error in DELETE /api/organization/[organizationId]/members/[memberId]:', error);
+    console.error('Error in DELETE /api/organization/[organizationId]/members/[clerkId]:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -72,7 +75,7 @@ export async function DELETE(
 // メンバー詳細の取得
 export async function GET(
   req: Request,
-  { params }: { params: { organizationId: string; memberId: string } }
+  { params }: { params: { organizationId: string; clerkId: string } }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
@@ -80,8 +83,8 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { organizationId, memberId } = params;
-    if (!organizationId || !memberId) {
+    const { organizationId, clerkId } = params;
+    if (!organizationId || !clerkId) {
       return new NextResponse('組織IDとメンバーIDは必須です', { status: 400 });
     }
 
@@ -103,9 +106,9 @@ export async function GET(
       return new NextResponse('Forbidden', { status: 403 });
     }
 
-    const member = await prisma.organizationMembership.findUnique({
+    const member = await prisma.organizationMembership.findFirst({
       where: {
-        id: memberId,
+        user: { clerkId },
         organizationId
       },
       include: {
@@ -126,7 +129,7 @@ export async function GET(
 
     return NextResponse.json(member);
   } catch (error) {
-    console.error('Error in GET /api/organization/[organizationId]/members/[memberId]:', error);
+    console.error('Error in GET /api/organization/[organizationId]/members/[clerkId]:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -134,7 +137,7 @@ export async function GET(
 // メンバーの権限変更
 export async function PATCH(
   req: Request,
-  { params }: { params: { organizationId: string; memberId: string } }
+  { params }: { params: { organizationId: string; clerkId: string } }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
@@ -142,8 +145,8 @@ export async function PATCH(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { organizationId, memberId } = params;
-    if (!organizationId || !memberId) {
+    const { organizationId, clerkId } = params;
+    if (!organizationId || !clerkId) {
       return new NextResponse('組織IDとメンバーIDは必須です', { status: 400 });
     }
 
@@ -165,8 +168,10 @@ export async function PATCH(
 
     const updatedMember = await prisma.organizationMembership.update({
       where: {
-        id: memberId,
-        organizationId
+        clerkId_organizationId: {
+          clerkId,
+          organizationId
+        }
       },
       data: { role },
       include: {
@@ -183,7 +188,7 @@ export async function PATCH(
 
     return NextResponse.json(updatedMember);
   } catch (error) {
-    console.error('Error in PATCH /api/organization/[organizationId]/members/[memberId]:', error);
+    console.error('Error in PATCH /api/organization/[organizationId]/members/[clerkId]:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

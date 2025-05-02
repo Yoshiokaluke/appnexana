@@ -58,10 +58,12 @@ model OrganizationProfile {
   organizationId String
   displayName    String?
   department     String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  position       String?
+  phoneNumber    String?
   introduction   String?
   profileImage   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   user           User         @relation(fields: [clerkId], references: [clerkId])
   organization   Organization @relation(fields: [organizationId], references: [id])
 

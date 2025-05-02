@@ -234,6 +234,12 @@ export async function checkUserRole(userId: string, requiredRole?: SystemRoleTyp
 
 // 組織ロールのチェック
 export async function checkOrganizationRole(userId: string, organizationId: string, requiredRole: OrganizationRoleType): Promise<boolean> {
+  // システムチームの場合は常にアクセスを許可
+  const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (user?.systemRole === 'system_team') {
+    return true;
+  }
+
   const membership = await prisma.organizationMembership.findFirst({
     where: {
       user: { clerkId: userId },
