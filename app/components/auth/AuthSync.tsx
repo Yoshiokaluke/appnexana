@@ -3,6 +3,13 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
 
+// windowオブジェクトにカスタムプロパティの型定義を追加
+declare global {
+  interface Window {
+    __DISABLE_AUTHSYNC__?: boolean;
+  }
+}
+
 export function AuthSync() {
   const { isLoaded, userId, getToken } = useAuth();
   const hasSynced = useRef(false);

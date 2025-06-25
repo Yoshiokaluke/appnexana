@@ -5,64 +5,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { OrganizationHeader } from '@/components/organization/OrganizationHeader';
 
-export function OrganizationHeaderWrapper() {
-  const params = useParams();
-  const organizationId = params.organizationId as string;
-  const [organizationName, setOrganizationName] = useState('');
-  const [isSystemTeam, setIsSystemTeam] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isMember, setIsMember] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchRole = async () => {
-      setLoading(true);
-      try {
-        const userRes = await fetch('/api/users/me');
-        const userData = await userRes.json();
-        const systemRole = userData.user?.systemRole;
-        setIsSystemTeam(systemRole === 'system_team');
-
-        const orgRes = await fetch(`/api/organizations/${organizationId}`);
-        const orgData = await orgRes.json();
-        setOrganizationName(orgData.organization?.name || '');
-
-        const membershipRes = await fetch(`/api/organizations/${organizationId}/members/me`);
-        if (membershipRes.ok) {
-          const membershipData = await membershipRes.json();
-          const role = membershipData.role;
-          setIsAdmin(role === 'admin' || systemRole === 'system_team');
-          setIsMember(role === 'member' || role === 'admin' || systemRole === 'system_team');
-        } else {
-          setIsAdmin(systemRole === 'system_team');
-          setIsMember(systemRole === 'system_team');
-        }
-      } catch {
-        setOrganizationName('');
-        setIsSystemTeam(false);
-        setIsAdmin(false);
-        setIsMember(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRole();
-  }, [organizationId]);
-
-  if (loading) {
-    return <div className="min-h-[60px] flex items-center justify-center text-gray-500">読み込み中...</div>;
-  }
-
-  return (
-    <OrganizationHeader
-      organizationId={organizationId}
-      organizationName={organizationName}
-      isSystemTeam={isSystemTeam}
-      isAdmin={isAdmin}
-    />
-  );
-}
-
 export default function OrganizationTopPage() {
   const params = useParams();
   const organizationId = params.organizationId as string;

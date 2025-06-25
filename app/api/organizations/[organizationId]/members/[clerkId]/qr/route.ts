@@ -8,7 +8,9 @@ export async function GET(
   { params }: { params: { organizationId: string; clerkId: string } }
 ) {
   const authResult = await organizationAuth(params.organizationId);
-  if (authResult) return authResult;
+  if (authResult.error) {
+    return authResult.error;
+  }
 
   try {
     const { organizationId, clerkId } = params;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,7 @@ interface ScanSession {
   getItemRecords: any[];
 }
 
-export default function ScanningPage() {
+function ScanningPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
@@ -564,5 +564,13 @@ export default function ScanningPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ScanningPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ScanningPageContent />
+    </Suspense>
   );
 } 

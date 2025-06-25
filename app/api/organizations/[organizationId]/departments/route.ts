@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthenticatedUser, isOrganizationMember } from '@/lib/auth/roles';
+import { getAuthenticatedUser, isOrganizationMember, checkOrganizationAdmin } from '@/lib/auth/roles';
 
 // GET: 部署一覧取得
 export async function GET(req: NextRequest, { params }: { params: { organizationId: string } }) {

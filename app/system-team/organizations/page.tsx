@@ -681,12 +681,3 @@ export default function OrganizationsPage() {
     </>
   );
 }
-
-export const config = {
-  matcher: [
-    "/system-team/:path*",
-    "/((?!.*\\..*|_next).*)",
-    "/",
-    "/(api|trpc)(.*)",
-  ],
-};

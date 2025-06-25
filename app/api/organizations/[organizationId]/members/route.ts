@@ -184,20 +184,4 @@ export async function POST(
     }
     return new NextResponse('Internal Server Error', { status: 500 });
   }
-}
-
-export async function getUserRolesRoute(
-  req: Request,
-  { params }: { params: { clerkId: string } }
-) {
-  try {
-    const roles = await getUserRoles(params.clerkId);
-    return NextResponse.json(roles);
-  } catch (error) {
-    console.error('Error fetching user roles:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch user roles' },
-      { status: 500 }
-    );
-  }
 } 

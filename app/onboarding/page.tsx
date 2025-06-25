@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import Image from 'next/image';
@@ -26,7 +26,7 @@ import {
 import { toast } from 'sonner';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
-export default function OnboardingPage() {
+function OnboardingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoaded, isSignedIn, userId } = useAuth();
@@ -420,5 +420,13 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OnboardingPageContent />
+    </Suspense>
   );
 } 
