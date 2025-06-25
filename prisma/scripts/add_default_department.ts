@@ -20,14 +20,14 @@ async function main() {
       });
     }
 
-    // departmentIdがnullのプロフィールに割り当て
+    // organizationDepartmentIdがnullのプロフィールに割り当て
     await prisma.organizationProfile.updateMany({
       where: {
         organizationId: org.id,
-        departmentId: null,
+        organizationDepartmentId: undefined,
       },
       data: {
-        departmentId: otherDept.id,
+        organizationDepartmentId: otherDept.id,
       }
     });
   }

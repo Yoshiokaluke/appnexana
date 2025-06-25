@@ -51,34 +51,39 @@ model Organization {
   qrScanners  QrScanner[]
   users       User[]                   @relation("OrganizationToUser")
   departments OrganizationDepartment[]
+  scanSessions ScanTogetherSession[]
+  scanPurposes ScanPurpose[]
 }
 
 model OrganizationDepartment {
-  id             String       @id @default(cuid())
-  organizationId String
-  name           String
-  order          Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  profiles       OrganizationProfile[]
+  id                     String                @id @default(cuid())
+  organizationId         String
+  name                   String
+  order                  Int
+  isDefault              Boolean               @default(false)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  organization           Organization          @relation(fields: [organizationId], references: [id])
+  organizationProfiles   OrganizationProfile[]
 
   @@unique([organizationId, name])
 }
 
 model OrganizationProfile {
-  id             String       @id @default(cuid())
-  clerkId        String
-  organizationId String
-  departmentId   String
-  displayName    String?
-  introduction   String?
-  profileImage   String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  user           User         @relation(fields: [clerkId], references: [clerkId])
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  department     OrganizationDepartment @relation(fields: [departmentId], references: [id])
+  id                     String                @id @default(cuid())
+  clerkId                String
+  organizationId         String
+  organizationDepartmentId String?
+  displayName            String?
+  introduction           String?
+  profileImage           String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  user                   User                  @relation(fields: [clerkId], references: [clerkId])
+  organization           Organization          @relation(fields: [organizationId], references: [id])
+  organizationDepartment OrganizationDepartment? @relation(fields: [organizationDepartmentId], references: [id])
+  qrCode                 OrganizationProfileQrCode?
+  scanRecords            ScanTogetherRecord[]
 
   @@unique([clerkId, organizationId])
 }
@@ -96,15 +101,17 @@ model QrScanner {
   description    String?
   status         String       @default("active")
   organization   Organization @relation(fields: [organizationId], references: [id])
+  scanSessions   ScanTogetherSession[]
 }
 
 model OrganizationInvitation {
   id             String           @id @default(cuid())
-  email          String
+  email          String?
   organizationId String
   role           OrganizationRole @default(member)
   expiresAt      DateTime
   invitedBy      String
+  token          String?          @unique
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   inviter        User             @relation("InvitedBy", fields: [invitedBy], references: [id])
@@ -114,14 +121,16 @@ model OrganizationInvitation {
 }
 
 model Profile {
-  id        String    @id @default(cuid())
-  clerkId   String    @unique
-  birthday  DateTime?
-  gender    String?
-  snsLinks  Json?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [clerkId], references: [clerkId])
+  id             String    @id @default(cuid())
+  clerkId        String    @unique
+  birthday       DateTime?
+  gender         String?
+  snsLinks       Json?
+  companyName    String?   // 所属企業
+  departmentName String?   // 所属部署
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [clerkId], references: [clerkId])
 
   @@map("Profile")
 }
@@ -133,4 +142,87 @@ enum SystemRole {
 enum OrganizationRole {
   admin
   member
+}
+
+model OrganizationProfileQrCode {
+  id                     String              @id @default(cuid())
+  organizationProfileId  String              @unique
+  qrCodeData            String              // QRコードのデータ（OrganizationProfileId + タイムスタンプ）
+  s3Key                 String?             // S3に保存されたQRコード画像のキー
+  expiresAt             DateTime             // 有効期限
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  organizationProfile   OrganizationProfile  @relation(fields: [organizationProfileId], references: [id])
+  usageHistory          QrCodeUsageHistory[]
+}
+
+model QrCodeUsageHistory {
+  id                     String                    @id @default(cuid())
+  qrCodeId               String
+  scannedAt              DateTime                  @default(now())
+  scannerId              String?                   // スキャンしたデバイスやユーザーのID
+  ipAddress              String?                   // スキャン時のIPアドレス
+  userAgent              String?                   // ユーザーエージェント
+  qrCode                 OrganizationProfileQrCode @relation(fields: [qrCodeId], references: [id])
+}
+
+// みんなでスキャンセッション
+model ScanTogetherSession {
+  id             String       @id @default(cuid())
+  scannerId      String
+  organizationId String
+  purpose        String       // スキャンの目的
+  status         SessionStatus @default(active)
+  startedAt      DateTime     @default(now())
+  endedAt        DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  scanner        QrScanner    @relation(fields: [scannerId], references: [scannerId])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  records        ScanTogetherRecord[]
+  getItemRecords GetItemRecord[]
+}
+
+// みんなでスキャン記録
+model ScanTogetherRecord {
+  id                    String              @id @default(cuid())
+  sessionId             String
+  organizationProfileId String
+  scannedAt             DateTime            @default(now())
+  createdAt             DateTime            @default(now())
+  session               ScanTogetherSession @relation(fields: [sessionId], references: [id])
+  profile               OrganizationProfile @relation(fields: [organizationProfileId], references: [id])
+
+  @@index([sessionId, organizationProfileId])
+  @@index([scannedAt])
+}
+
+// 飲み物取得記録
+model GetItemRecord {
+  id         String              @id @default(cuid())
+  sessionId  String
+  claimedAt  DateTime            @default(now())
+  createdAt  DateTime            @default(now())
+  session    ScanTogetherSession @relation(fields: [sessionId], references: [id])
+}
+
+enum SessionStatus {
+  active
+  completed
+  cancelled
+}
+
+// スキャン目的テーブル
+model ScanPurpose {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String       // 目的名
+  description    String?      // 説明
+  order          Int          @default(0) // 表示順序
+  isActive       Boolean      @default(true) // 有効/無効
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, name])
 }

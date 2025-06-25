@@ -59,7 +59,6 @@ export async function POST(req: Request) {
             email: email,
             firstName: first_name ?? null,
             lastName: last_name ?? null,
-            roles: [],
           },
         })
 

@@ -32,7 +32,7 @@ export function InvitePageContent({ organizationId }: InvitePageContentProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/organization/${organizationId}/members`, {
+      const response = await fetch(`/api/organizations/${organizationId}/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

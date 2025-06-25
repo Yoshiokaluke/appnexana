@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SystemRoleType } from "@/lib/auth/roles";
+import { scannerAuthMiddleware, isScannerRoute } from "@/lib/scanner/middleware";
 
 // 公開ルートの定義
 const publicRoutes = [
@@ -11,14 +12,19 @@ const publicRoutes = [
   "/sign-up",
   "/organization-list",
   "/qr-scanner-login",
+  "/scanner/login",
   "/api/webhooks/clerk",
   "/api/users/[userId]",
-  "/api/organizations/[organizationId]/members/[userId]"
+  "/api/organizations/[organizationId]/members/[userId]",
+  "/api/test-env",
+  "/api/organizations/[organizationId]/invitation/[invitationId]/accept"
 ];
 
 // 無視するルートの定義
 const ignoredRoutes = [
   "/qr-scanner",
+  "/scanner",
+  "/api/scanner",
   "/api/webhooks/clerk",
   "/_next/static",
   "/favicon.ico"
@@ -56,45 +62,78 @@ const isOrganizationRoute = (req: NextRequest) => {
 
 const checkOrganizationAccess = async (userId: string | null, req: NextRequest) => {
   if (!userId) return false;
-  const organizationId = req.nextUrl.pathname.split("/")[2];
-  const membership = await prisma.organizationMembership.findFirst({
-    where: {
-      user: { clerkId: userId },
-      organizationId,
-      role: { in: ['admin', 'member'] }
+  
+  const pathParts = req.nextUrl.pathname.split("/");
+  const organizationId = pathParts[2];
+  
+  if (!organizationId) return false;
+
+  try {
+    // 1. 最優先: システムチーム権限をチェック
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { systemRole: true }
+    });
+
+    if (user?.systemRole === 'system_team') {
+      return true;
     }
-  });
-  return !!membership;
+
+    // 2. 次に: 組織メンバーシップをチェック
+    const membership = await prisma.organizationMembership.findFirst({
+      where: {
+        user: { clerkId: userId },
+        organizationId,
+        role: { in: ['admin', 'member'] }
+      }
+    });
+    
+    return !!membership;
+  } catch (error) {
+    console.error('組織アクセスチェックエラー:', error);
+    return false;
+  }
 };
 
 export default authMiddleware({
-  publicRoutes: ["/", "/sign-in", "/sign-up"],
-  afterAuth: async (auth, req) => {
-    if (!auth.userId && !auth.isPublicRoute) {
-      // 未認証の場合、現在のURLをクエリパラメータとして保存
-      const signInUrl = new URL('/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
-      return NextResponse.redirect(signInUrl);
+  publicRoutes: [
+    "/", 
+    "/sign-in", 
+    "/sign-up", 
+    "/organization-list", 
+    "/scanner/login",
+    "/api/scanner/auth",
+    "/api/scanner/auth/check",
+    "/api/test-env",
+    "/organization/[organizationId]/invitation/[invitationId]/accept",
+    "/api/organizations/[organizationId]/invitation/[invitationId]/accept"
+  ],
+  beforeAuth: async (req) => {
+    if (isScannerRoute(req.nextUrl.pathname)) {
+      return await scannerAuthMiddleware(req);
     }
-
-    // 認証済みで組織の招待acceptページの場合は、そのまま処理を続行
-    if (auth.userId && req.nextUrl.pathname.includes('/invitation/') && req.nextUrl.pathname.endsWith('/accept')) {
+    
+    return NextResponse.next();
+  },
+  afterAuth: async (auth, req) => {
+    if (isScannerRoute(req.nextUrl.pathname)) {
       return NextResponse.next();
     }
 
-    // 認証済みでsign-inまたはsign-upページにいる場合は組織リストにリダイレクト
-    if (auth.userId && (req.nextUrl.pathname === '/sign-in' || req.nextUrl.pathname === '/sign-up')) {
-      return NextResponse.redirect(new URL('/organization-list', req.url));
+    if (!auth.userId && !auth.isPublicRoute) {
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
     }
 
     return NextResponse.next();
   },
 });
 
-// 必要なパスのみをマッチさせる
 export const config = {
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
+
 export const checkSystemTeamAccess = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarIcon, Mail, MapPin, Pencil, User, Users, Lock } from "lucide-react";
+import { CalendarIcon, Mail, MapPin, Pencil, User, Users, Lock, Building2, AlertCircle, CheckCircle, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,9 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateSelect } from "@/components/ui/date-select";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface ProfileViewProps {
   user: {
@@ -30,6 +32,8 @@ interface ProfileViewProps {
       birthday: Date | null;
       gender: string | null;
       snsLinks: any;
+      companyName: string | null;
+      departmentName: string | null;
       createdAt: Date;
       updatedAt: Date;
     } | null;
@@ -58,6 +62,9 @@ interface SnsLink {
 
 export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
   const { user: clerkUser } = useUser();
+  const { signOut } = useClerk();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState(initialUser);
   const [snsLinks, setSnsLinks] = useState<SnsLink[]>([
     { platform: 'facebook', url: initialUser.profile?.snsLinks?.facebook || '', isEditing: false, editValue: initialUser.profile?.snsLinks?.facebook || '' },
@@ -65,6 +72,9 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
     { platform: 'instagram', url: initialUser.profile?.snsLinks?.instagram || '', isEditing: false, editValue: initialUser.profile?.snsLinks?.instagram || '' },
   ]);
 
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingFirstName, setEditingFirstName] = useState(initialUser.firstName || '');
+  const [editingLastName, setEditingLastName] = useState(initialUser.lastName || '');
   const [isEditingGender, setIsEditingGender] = useState(false);
   const [isEditingBirthday, setIsEditingBirthday] = useState(false);
   const [editingGender, setEditingGender] = useState(initialUser.profile?.gender || '');
@@ -72,11 +82,26 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
     initialUser.profile?.birthday ? new Date(initialUser.profile.birthday) : undefined
   );
 
+  // 新しいフィールドの編集状態
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [isEditingDepartment, setIsEditingDepartment] = useState(false);
+  const [editingCompany, setEditingCompany] = useState(initialUser.profile?.companyName || '');
+  const [editingDepartment, setEditingDepartment] = useState(initialUser.profile?.departmentName || '');
+
   const [isPasswordChangeVisible, setIsPasswordChangeVisible] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editingSnsLinks, setEditingSnsLinks] = useState<any>(initialUser.profile?.snsLinks || { facebook: '', linkedin: '', instagram: '' });
+  const [editingSnsPlatform, setEditingSnsPlatform] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 招待フローからの誘導かどうかをチェック
+  const isFromInvitation = searchParams.get('from_invitation') === 'true';
+  const organizationId = searchParams.get('organization_id');
 
   useEffect(() => {
     // Google認証ユーザーの場合は、パスワード変更セクションを非表示にする
@@ -89,6 +114,17 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
     };
     checkAuthProvider();
   }, [clerkUser]);
+
+  // 必須項目の完了状況をチェック
+  const checkRequiredFields = () => {
+    const missingFields = [];
+    if (!user.profile?.birthday) missingFields.push('birthday');
+    if (!user.profile?.gender) missingFields.push('gender');
+    return {
+      isComplete: missingFields.length === 0,
+      missingFields
+    };
+  };
 
   const formatDate = (date: Date | null | undefined) => {
     if (!date) return "未設定";
@@ -192,16 +228,48 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
   const getSnsIcon = (platform: SnsLink['platform']) => {
     switch (platform) {
       case 'facebook':
-        return <FacebookIcon className="w-5 h-5 text-blue-600" />;
+        return <FacebookIcon className="w-6 h-6 md:w-8 md:h-8 text-gray-600" />;
       case 'linkedin':
-        return <LinkedinIcon className="w-5 h-5 text-blue-800" />;
+        return <LinkedinIcon className="w-6 h-6 md:w-8 md:h-8 text-gray-600" />;
       case 'instagram':
-        return <InstagramIcon className="w-5 h-5 text-pink-600" />;
+        return <InstagramIcon className="w-6 h-6 md:w-8 md:h-8 text-pink-500" />;
+    }
+  };
+
+  const handleSaveName = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: editingFirstName,
+          lastName: editingLastName,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        firstName: editingFirstName,
+        lastName: editingLastName,
+      }));
+
+      setIsEditingName(false);
+      toast.success("名前を更新しました");
+    } catch {
+      toast.error("更新に失敗しました");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveGender = async () => {
     try {
+      setIsSaving(true);
       const response = await fetch(`/api/users/${clerkId}/profile`, {
         method: "PATCH",
         headers: {
@@ -222,22 +290,25 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
         },
       }));
 
-      toast.success("性別を更新しました");
       setIsEditingGender(false);
+      toast.success("性別を更新しました");
     } catch {
       toast.error("更新に失敗しました");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveBirthday = async () => {
     try {
+      setIsSaving(true);
       const response = await fetch(`/api/users/${clerkId}/profile`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          dateOfBirth: editingBirthday || null,
+          birthday: editingBirthday,
         }),
       });
 
@@ -247,295 +318,554 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
         ...prev,
         profile: {
           ...prev.profile!,
-          birthday: editingBirthday || null,
+          birthday: editingBirthday ?? null,
         },
       }));
 
-      toast.success("生年月日を更新しました");
       setIsEditingBirthday(false);
+      toast.success("生年月日を更新しました");
     } catch {
       toast.error("更新に失敗しました");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveCompany = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          companyName: editingCompany,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile!,
+          companyName: editingCompany,
+        },
+      }));
+
+      setIsEditingCompany(false);
+      toast.success("所属企業を更新しました");
+    } catch {
+      toast.error("更新に失敗しました");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveDepartment = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          departmentName: editingDepartment,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile!,
+          departmentName: editingDepartment,
+        },
+      }));
+
+      setIsEditingDepartment(false);
+      toast.success("所属部署を更新しました");
+    } catch {
+      toast.error("更新に失敗しました");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("新しいパスワードと確認用パスワードが一致しません");
+      toast.error("新しいパスワードが一致しません");
       return;
     }
 
-    setIsChangingPassword(true);
     try {
-      await clerkUser?.updatePassword({
-        currentPassword,
-        newPassword,
+      setIsChangingPassword(true);
+      const response = await fetch("/account/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
       });
-      toast.success("パスワードを更新しました");
+
+      if (!response.ok) throw new Error();
+
+      toast.success("パスワードを変更しました");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error) {
-      toast.error("パスワードの更新に失敗しました");
+    } catch {
+      toast.error("パスワードの変更に失敗しました");
     } finally {
       setIsChangingPassword(false);
     }
   };
 
+  const startEditProfile = () => {
+    setIsEditingProfile(true);
+    setEditingSnsLinks(user.profile?.snsLinks || { facebook: '', linkedin: '', instagram: '' });
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          snsLinks: editingSnsLinks,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile!,
+          snsLinks: editingSnsLinks,
+        },
+      }));
+
+      setIsEditingProfile(false);
+      toast.success("プロフィールを更新しました");
+    } catch {
+      toast.error("更新に失敗しました");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveSns = async (platform: string) => {
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/users/${clerkId}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          snsLinks: {
+            ...user.profile?.snsLinks,
+            [platform]: editingSnsLinks[platform],
+          },
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setUser(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile!,
+          snsLinks: {
+            ...prev.profile!.snsLinks,
+            [platform]: editingSnsLinks[platform],
+          },
+        },
+      }));
+
+      setEditingSnsPlatform(null);
+      toast.success(`${platform}リンクを保存しました`);
+    } catch (e) {
+      toast.error('保存に失敗しました');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push("/");
+    } catch (error) {
+      toast.error("ログアウトに失敗しました");
+    }
+  };
+
+  // 必須項目の完了状況
+  const requiredFieldsStatus = checkRequiredFields();
+
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* ヘッダー部分 */}
-      <div className="relative mb-16">
-        <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg relative">
+    <div className="max-w-4xl mx-auto py-12 px-4 md:px-8 bg-gray-50 min-h-screen">
+      {/* タイトル */}
+      <div className="max-w-2xl mx-auto mb-8">
+        <div className="flex items-center gap-3">
+          <User className="w-7 h-7 text-blue-500" />
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">プロフィール・設定</h1>
         </div>
-        <div className="absolute -bottom-16 left-8">
-          <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-            <AvatarFallback />
-          </Avatar>
-        </div>
+        <div className="h-1 w-16 bg-blue-100 rounded mt-2 mb-2" />
       </div>
 
-      {/* プロフィール情報 - 新デザイン */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 gap-8 px-4 md:px-8 mt-20"
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            プロフィール情報
-          </h2>
-          <Link href={`/organization-list/users/${clerkId}/settings/profile`}>
-            <Button variant="secondary" className="py-2 inline-flex items-center justify-center gap-1.5 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-3 [&_svg]:shrink-0 text-secondary-foreground shadow-sm h-7 rounded-md px-2.5 text-[9px] bg-white hover:bg-gray-100">
-              <Pencil className="w-3 h-3" />
-              <span className="scale-90 mx-0.5">プロフィールを編集</span>
-            </Button>
-          </Link>
+      {/* 招待フローからの誘導の場合のヘッダー */}
+      {isFromInvitation && (
+        <div className="mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600" />
+              <div>
+                <h2 className="text-lg font-semibold text-blue-900">共通プロフィールの登録が必要です</h2>
+                <p className="text-blue-700 text-sm mt-1">
+                  組織に参加するために、以下の必須項目を登録してください。
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
 
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-sm p-6 md:p-8 hover:shadow-md transition-shadow"
-        >
-          <div className="grid gap-4">
-            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="p-3 bg-blue-100 rounded-full shrink-0">
-                <User className="w-5 h-5 text-blue-600" />
+      {/* 必須項目完了状況の表示 */}
+      {isFromInvitation && (
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">必須項目の登録状況</h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {user.profile?.birthday ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                )}
+                <span className={user.profile?.birthday ? "text-green-700" : "text-red-700"}>
+                  生年月日: {user.profile?.birthday ? "登録済み" : "未登録"}
+                </span>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm text-gray-500">氏名</p>
-                <p className="font-medium text-gray-900">{user.lastName} {user.firstName}</p>
+              <div className="flex items-center gap-2">
+                {user.profile?.gender ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                )}
+                <span className={user.profile?.gender ? "text-green-700" : "text-red-700"}>
+                  性別: {user.profile?.gender ? "登録済み" : "未登録"}
+                </span>
               </div>
             </div>
-
-            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-              <div className="p-3 bg-purple-100 rounded-full shrink-0">
-                <Users className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-500">性別</p>
-                {isEditingGender ? (
-                  <div className="flex items-center space-x-2">
-                    <Select
-                      value={editingGender}
-                      onValueChange={setEditingGender}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="性別を選択" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">男性</SelectItem>
-                        <SelectItem value="female">女性</SelectItem>
-                        <SelectItem value="other">その他</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleSaveGender}
-                      >
-                        保存
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setIsEditingGender(false);
-                          setEditingGender(user.profile?.gender || '');
-                        }}
-                      >
-                        キャンセル
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900">{getGenderLabel(user.profile?.gender)}</p>
+            {requiredFieldsStatus.isComplete && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span className="text-green-800 font-medium">すべての必須項目が登録されました</span>
+                </div>
+                {organizationId && (
+                  <div className="mt-3">
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditingGender(true)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => router.push(`/organization/${organizationId}/(member)/OrganizationProfile/${clerkId}/edit?from_invitation=true`)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
                     >
-                      <Pencil className="w-4 h-4" />
+                      組織プロフィールの登録に進む
                     </Button>
                   </div>
                 )}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
+      )}
 
-            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="p-3 bg-blue-100 rounded-full shrink-0">
-                <Mail className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm text-gray-500">メールアドレス</p>
-                <p className="font-medium text-gray-900 break-all">{user.email}</p>
+      {/* プロフィール情報カード */}
+      <div className="space-y-6 max-w-2xl mx-auto">
+        {/* メールアドレス */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <Mail className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">メールアドレス</div>
+              <div className="flex items-center justify-between">
+                <span className="block text-sm md:text-base text-gray-800 break-all font-normal">{user.email}</span>
               </div>
             </div>
-
-            <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-              <div className="p-3 bg-purple-100 rounded-full shrink-0">
-                <CalendarIcon className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-500">生年月日</p>
-                {isEditingBirthday ? (
-                  <div className="flex items-center space-x-2">
-                    <DateSelect
-                      value={editingBirthday}
-                      onChange={setEditingBirthday}
+          </div>
+        </div>
+        {/* 氏名 */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <User className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">氏名</div>
+              {isEditingName ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-2">
+                    <Input
+                      value={editingFirstName}
+                      onChange={(e) => setEditingFirstName(e.target.value)}
+                      placeholder="姓"
+                      className="w-32 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 h-11 text-base shadow-sm"
                     />
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleSaveBirthday}
-                      >
-                        保存
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setIsEditingBirthday(false);
-                          setEditingBirthday(user.profile?.birthday ? new Date(user.profile.birthday) : undefined);
-                        }}
-                      >
-                        キャンセル
-                      </Button>
-                    </div>
+                    <Input
+                      value={editingLastName}
+                      onChange={(e) => setEditingLastName(e.target.value)}
+                      placeholder="名"
+                      className="w-32 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 h-11 text-base shadow-sm"
+                    />
                   </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900">{formatDate(user.profile?.birthday)}</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditingBirthday(true)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+                  <Button size="sm" variant="outline" onClick={handleSaveName} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setIsEditingName(false); setEditingFirstName(user.firstName || ''); setEditingLastName(user.lastName || ''); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className={`font-semibold text-base md:text-lg ${user.firstName && user.lastName ? 'text-gray-800' : 'text-red-600'}`}>
+                    {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : "未設定"}
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingName(true)} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
             </div>
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-xl shadow-sm p-6 md:p-8 hover:shadow-md transition-shadow"
-        >
-          <h2 className="text-xl md:text-2xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-orange-600 bg-clip-text text-transparent">
-            SNSリンク
-          </h2>
-          <div className="space-y-4">
-            {snsLinks.map(link => (
-              <div key={link.platform} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg group">
-                {link.isEditing ? (
-                  <>
-                    <div className="p-3 bg-gray-100 rounded-full shrink-0">
-                      {getSnsIcon(link.platform)}
-                    </div>
-                    <div className="flex-1">
-                      <Input
-                        value={link.editValue}
-                        onChange={(e) => handleChange(link.platform, e.target.value)}
-                        placeholder={`https://www.${link.platform}.com/username`}
-                        className="w-full"
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSave(link.platform)}
-                      >
-                        保存
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCancel(link.platform)}
-                      >
-                        キャンセル
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="p-3 bg-gray-100 rounded-full shrink-0">
-                      {getSnsIcon(link.platform)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {link.url ? (
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-700 hover:text-blue-600 transition-colors truncate block"
-                        >
-                          {link.url}
-                        </a>
-                      ) : (
-                        <span className="text-gray-500">未設定</span>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(link.platform)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            ))}
+        </div>
+        {/* 性別 */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <Users className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">性別</div>
+              {isEditingGender ? (
+                <div className="flex items-center gap-3">
+                  <Select value={editingGender} onValueChange={setEditingGender}>
+                    <SelectTrigger className="w-44 h-11 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 text-base shadow-sm">
+                      <SelectValue placeholder="性別を選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">男性</SelectItem>
+                      <SelectItem value="female">女性</SelectItem>
+                      <SelectItem value="other">その他</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" variant="outline" onClick={handleSaveGender} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setIsEditingGender(false); setEditingGender(user.profile?.gender || ''); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className={`font-semibold text-base md:text-lg ${user.profile?.gender ? 'text-gray-800' : 'text-red-600'}`}>{getGenderLabel(user.profile?.gender)}</span>
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingGender(true)} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
+            </div>
           </div>
-        </motion.div>
-
+        </div>
+        {/* 生年月日 */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <CalendarIcon className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">生年月日</div>
+              {isEditingBirthday ? (
+                <div className="flex items-center gap-3">
+                  <DateSelect value={editingBirthday} onChange={setEditingBirthday} />
+                  <Button size="sm" variant="outline" onClick={handleSaveBirthday} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setIsEditingBirthday(false); setEditingBirthday(user.profile?.birthday ? new Date(user.profile.birthday) : undefined); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className={`font-semibold text-base md:text-lg ${user.profile?.birthday ? 'text-gray-800' : 'text-red-600'}`}>{formatDate(user.profile?.birthday)}</span>
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingBirthday(true)} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* 所属企業 */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <Building2 className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">所属企業</div>
+              {isEditingCompany ? (
+                <div className="flex items-center gap-3">
+                  <Input
+                    value={editingCompany}
+                    onChange={(e) => setEditingCompany(e.target.value)}
+                    placeholder="所属企業名"
+                    className="w-full md:w-80 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 h-11 text-base shadow-sm"
+                  />
+                  <Button size="sm" variant="outline" onClick={handleSaveCompany} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setIsEditingCompany(false); setEditingCompany(user.profile?.companyName || ''); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="block text-sm md:text-base text-gray-800 break-all font-normal">{user.profile?.companyName || "未設定"}</span>
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingCompany(true)} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* 所属部署 */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <Users className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">所属部署</div>
+              {isEditingDepartment ? (
+                <div className="flex items-center gap-3">
+                  <Input
+                    value={editingDepartment}
+                    onChange={(e) => setEditingDepartment(e.target.value)}
+                    placeholder="所属部署名"
+                    className="w-full md:w-80 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 h-11 text-base shadow-sm"
+                  />
+                  <Button size="sm" variant="outline" onClick={handleSaveDepartment} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setIsEditingDepartment(false); setEditingDepartment(user.profile?.departmentName || ''); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="block text-sm md:text-base text-gray-800 break-all font-normal">{user.profile?.departmentName || "未設定"}</span>
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingDepartment(true)} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* SNSリンク */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <FacebookIcon className="w-6 h-6 md:w-8 md:h-8 text-gray-600" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">Facebookリンク</div>
+              {editingSnsPlatform === 'facebook' ? (
+                <div className="flex items-center gap-3">
+                  <Input
+                    value={editingSnsLinks['facebook'] || ''}
+                    onChange={e => setEditingSnsLinks((prev: any) => ({ ...prev, facebook: e.target.value }))}
+                    placeholder="FacebookのURL"
+                    className="w-full md:w-80 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 h-11 text-base shadow-sm"
+                  />
+                  <Button size="sm" variant="outline" onClick={() => handleSaveSns('facebook')} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditingSnsPlatform(null); setEditingSnsLinks((prev: any) => ({ ...prev, facebook: user.profile?.snsLinks?.facebook || '' })); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="block text-sm md:text-base text-gray-800 break-all font-normal">
+                    {user.profile?.snsLinks?.facebook ? (
+                      <a href={user.profile.snsLinks.facebook} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        {user.profile.snsLinks.facebook}
+                      </a>
+                    ) : (
+                      <span className="text-gray-600">未設定</span>
+                    )}
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingSnsPlatform('facebook')} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <LinkedinIcon className="w-6 h-6 md:w-8 md:h-8 text-gray-600" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">Linkedinリンク</div>
+              {editingSnsPlatform === 'linkedin' ? (
+                <div className="flex items-center gap-3">
+                  <Input
+                    value={editingSnsLinks['linkedin'] || ''}
+                    onChange={e => setEditingSnsLinks((prev: any) => ({ ...prev, linkedin: e.target.value }))}
+                    placeholder="LinkedinのURL"
+                    className="w-full md:w-80 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 h-11 text-base shadow-sm"
+                  />
+                  <Button size="sm" variant="outline" onClick={() => handleSaveSns('linkedin')} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditingSnsPlatform(null); setEditingSnsLinks((prev: any) => ({ ...prev, linkedin: user.profile?.snsLinks?.linkedin || '' })); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="block text-sm md:text-base text-gray-800 break-all font-normal">
+                    {user.profile?.snsLinks?.linkedin ? (
+                      <a href={user.profile.snsLinks.linkedin} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        {user.profile.snsLinks.linkedin}
+                      </a>
+                    ) : (
+                      <span className="text-gray-600">未設定</span>
+                    )}
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingSnsPlatform('linkedin')} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 md:gap-12 items-center">
+            <div className="flex-shrink-0 flex items-center justify-start w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-50 shadow">
+              <InstagramIcon className="w-6 h-6 md:w-8 md:h-8 text-pink-500" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">Instagramリンク</div>
+              {editingSnsPlatform === 'instagram' ? (
+                <div className="flex items-center gap-3">
+                  <Input
+                    value={editingSnsLinks['instagram'] || ''}
+                    onChange={e => setEditingSnsLinks((prev: any) => ({ ...prev, instagram: e.target.value }))}
+                    placeholder="InstagramのURL"
+                    className="w-full md:w-80 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 h-11 text-base shadow-sm"
+                  />
+                  <Button size="sm" variant="outline" onClick={() => handleSaveSns('instagram')} disabled={isSaving} className="h-11 px-4">保存</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditingSnsPlatform(null); setEditingSnsLinks((prev: any) => ({ ...prev, instagram: user.profile?.snsLinks?.instagram || '' })); }} disabled={isSaving} className="h-11 px-4">キャンセル</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="block text-sm md:text-base text-pink-500 break-all font-normal">
+                    {user.profile?.snsLinks?.instagram ? (
+                      <a href={user.profile.snsLinks.instagram} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        {user.profile.snsLinks.instagram}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">未設定</span>
+                    )}
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingSnsPlatform('instagram')} className="text-blue-600 h-11 px-4">編集</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* パスワード変更 */}
         {isPasswordChangeVisible && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
-            className="bg-white rounded-xl shadow-sm p-6 md:p-8 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center space-x-2 mb-6">
-              <Lock className="w-5 h-5 text-purple-600" />
-              <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                パスワード変更
-              </h2>
-            </div>
+          <div className="bg-white rounded-xl shadow p-6 mt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">パスワード変更</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -545,7 +875,7 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full"
+                  className="h-11 text-base shadow-sm w-full md:w-96"
                 />
               </div>
               <div>
@@ -556,7 +886,7 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full"
+                  className="h-11 text-base shadow-sm w-full md:w-96"
                 />
               </div>
               <div>
@@ -567,20 +897,34 @@ export function ProfileView({ user: initialUser, clerkId }: ProfileViewProps) {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full"
+                  className="h-11 text-base shadow-sm w-full md:w-96"
                 />
               </div>
               <Button
                 onClick={handlePasswordChange}
                 disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
-                className="w-full"
+                className="w-full md:w-96 h-11 text-base bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm"
               >
                 {isChangingPassword ? "更新中..." : "パスワードを変更"}
               </Button>
             </div>
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+
+        {/* ログアウトボタン */}
+        <div className="bg-white rounded-xl shadow p-6 mt-6">
+          <div className="flex items-center justify-center">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full md:w-96 h-12 text-base border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold rounded-xl shadow-sm"
+            >
+              <LogOut className="w-5 h-5 mr-2" />
+              ログアウト
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

@@ -1,5 +1,6 @@
 import { organizationAdminAuth } from '@/lib/auth/roles';
 import { prisma } from '@/lib/prisma';
+import { AdminMenu } from '@/components/organization/AdminMenu';
 import OrganizationDetails from '@/app/organization/[organizationId]/(admin)/admin-toppage/OrganizationDetails';
 
 export default async function OrganizationPage({
@@ -28,5 +29,10 @@ export default async function OrganizationPage({
     return <div className="p-6">組織が見つかりません</div>;
   }
 
-  return <OrganizationDetails organization={organization} />;
+  return (
+    <>
+      <AdminMenu />
+      <OrganizationDetails organization={organization} />
+    </>
+  );
 } 

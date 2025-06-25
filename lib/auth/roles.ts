@@ -48,6 +48,10 @@ export const AuthError = {
   NOT_FOUND: {
     message: 'リソースが見つかりません',
     code: 404
+  },
+  INTERNAL_ERROR: {
+    message: '内部エラーが発生しました',
+    code: 500
   }
 } as const;
 
@@ -69,10 +73,10 @@ export type AuthenticatedUser = {
 }
 
 // システムロールの取得
-export const getSystemRole = async (userId: string): Promise<SystemRoleType | null> => {
+export const getSystemRole = async (clerkId: string): Promise<SystemRoleType | null> => {
   try {
     const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
+      where: { clerkId },
       select: { systemRole: true }
     })
     return user?.systemRole || null
@@ -83,11 +87,11 @@ export const getSystemRole = async (userId: string): Promise<SystemRoleType | nu
 }
 
 // 組織ロールの取得
-export const getOrganizationRoles = async (userId: string, organizationId: string): Promise<OrganizationRoleType[]> => {
+export const getOrganizationRoles = async (clerkId: string, organizationId: string): Promise<OrganizationRoleType[]> => {
   try {
     const memberships = await prisma.organizationMembership.findMany({
       where: {
-        user: { clerkId: userId },
+        user: { clerkId },
         organizationId
       },
       select: { role: true }
@@ -100,16 +104,16 @@ export const getOrganizationRoles = async (userId: string, organizationId: strin
 }
 
 // ユーザーロールの取得
-export const getUserRoles = async (userId: string, organizationId?: string): Promise<UserRole> => {
-  const systemRole = await getSystemRole(userId)
-  const organizationRoles = organizationId ? await getOrganizationRoles(userId, organizationId) : []
+export const getUserRoles = async (clerkId: string, organizationId?: string): Promise<UserRole> => {
+  const systemRole = await getSystemRole(clerkId)
+  const organizationRoles = organizationId ? await getOrganizationRoles(clerkId, organizationId) : []
   return { systemRole, organizationRoles }
 }
 
 // システムチームメンバーのチェック
-export const checkSystemTeamRole = async (userId: string): Promise<boolean> => {
+export const checkSystemTeamRole = async (clerkId: string): Promise<boolean> => {
   const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
+    where: { clerkId },
     select: { systemRole: true }
   });
   return user?.systemRole === 'system_team';
@@ -170,27 +174,99 @@ export async function isOrganizationMember(clerkId: string, organizationId: stri
   return !!membership
 }
 
-// 認証の要求
-export async function requireAuth() {
-  const { userId } = auth()
-  if (!userId) {
-    throw new Error('認証が必要です')
+// 組織メンバーシップの権限チェック（包括的）
+export async function checkOrganizationMembership(clerkId: string, organizationId: string): Promise<boolean> {
+  try {
+    console.log('組織メンバーシップ権限チェック - ユーザーID:', clerkId, '組織ID:', organizationId);
+
+    // 1. 最優先: システムチーム権限をチェック
+    const user = await prisma.user.findUnique({ 
+      where: { clerkId },
+      select: { systemRole: true }
+    });
+    console.log('ユーザー情報:', user);
+
+    if (user?.systemRole === 'system_team') {
+      console.log('アクセス権限あり（システムチーム）');
+      return true;
+    }
+
+    // 2. 次に: 組織メンバーシップをチェック
+    const membership = await prisma.organizationMembership.findFirst({
+      where: {
+        user: { clerkId },
+        organizationId,
+        role: { in: ['admin', 'member'] }
+      },
+      include: {
+        user: true
+      }
+    });
+    console.log('メンバーシップ:', membership);
+
+    if (membership) {
+      console.log('アクセス権限あり（組織メンバー）:', membership.role);
+      return true;
+    }
+
+    console.log('アクセス権限なし');
+    return false;
+  } catch (error) {
+    console.error('組織メンバーシップ権限チェックエラー:', error);
+    return false;
   }
-  return userId
 }
 
-// システムチーム認証
-export const systemTeamAuth = async (): Promise<AuthResult> => {
+// 組織メンバーシップ認証
+export const organizationMembershipAuth = async (organizationId: string): Promise<AuthResult> => {
   try {
-    const { userId } = auth()
-    if (!userId) {
+    const { userId: clerkId } = auth()
+    if (!clerkId) {
       return {
         success: false,
         error: AuthError.UNAUTHORIZED
       }
     }
 
-    const isSystemTeam = await checkSystemTeamRole(userId)
+    const hasAccess = await checkOrganizationMembership(clerkId, organizationId)
+    if (!hasAccess) {
+      return {
+        success: false,
+        error: AuthError.FORBIDDEN
+      }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('組織メンバーシップ認証エラー:', error)
+    return {
+      success: false,
+      error: AuthError.INTERNAL_ERROR
+    }
+  }
+}
+
+// 認証の要求
+export async function requireAuth() {
+  const { userId: clerkId } = auth()
+  if (!clerkId) {
+    throw new Error('認証が必要です')
+  }
+  return clerkId
+}
+
+// システムチーム認証
+export const systemTeamAuth = async (): Promise<AuthResult> => {
+  try {
+    const { userId: clerkId } = auth()
+    if (!clerkId) {
+      return {
+        success: false,
+        error: AuthError.UNAUTHORIZED
+      }
+    }
+
+    const isSystemTeam = await checkSystemTeamRole(clerkId)
     if (!isSystemTeam) {
       return {
         success: false,
@@ -200,10 +276,10 @@ export const systemTeamAuth = async (): Promise<AuthResult> => {
 
     return { success: true }
   } catch (error) {
-    console.error('Error in system team auth:', error)
+    console.error('システムチーム認証エラー:', error)
     return {
       success: false,
-      error: AuthError.UNAUTHORIZED
+      error: AuthError.INTERNAL_ERROR
     }
   }
 }
@@ -211,15 +287,15 @@ export const systemTeamAuth = async (): Promise<AuthResult> => {
 // 組織管理者認証
 export const organizationAdminAuth = async (organizationId: string): Promise<AuthResult> => {
   try {
-    const { userId } = auth()
-    if (!userId) {
+    const { userId: clerkId } = auth()
+    if (!clerkId) {
       return {
         success: false,
         error: AuthError.UNAUTHORIZED
       }
     }
 
-    const isAdmin = await checkOrganizationAdmin(userId, organizationId)
+    const isAdmin = await checkOrganizationMembership(clerkId, organizationId)
     if (!isAdmin) {
       return {
         success: false,

@@ -25,20 +25,6 @@ export default function OrganizationDetails({ organization }: OrganizationDetail
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">組織の詳細</h2>
-        <div className="flex gap-4">
-          <a
-            href={`/organization/${organizationId}/(admin)/members`}
-            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            メンバー管理
-          </a>
-          <a
-            href={`/organization/${organizationId}/scanners`}
-            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            スキャナー管理
-          </a>
-        </div>
       </div>
 
       <div className="bg-white shadow-sm rounded-lg p-6">

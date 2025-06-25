@@ -55,7 +55,6 @@ export async function POST(req: Request) {
             email: evt.data.email_addresses[0]?.email_address ?? '',
             firstName: evt.data.first_name ?? null,
             lastName: evt.data.last_name ?? null,
-            roles: [],
           },
         });
         break;

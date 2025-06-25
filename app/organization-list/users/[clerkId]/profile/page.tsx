@@ -28,7 +28,7 @@ export default async function ProfilePage({
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="max-w-4xl mx-auto p-6">
       <ProfileView user={user} clerkId={params.clerkId} />
     </div>
   );

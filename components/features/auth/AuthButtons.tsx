@@ -1,4 +1,4 @@
-import { SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
 
 export const AuthButtons = () => {
   return (
@@ -14,18 +14,5 @@ export const AuthButtons = () => {
         </button>
       </SignUpButton>
     </div>
-  )
-}
-
-export const UserProfileButton = () => {
-  return (
-    <UserButton
-      appearance={{
-        elements: {
-          avatarBox: 'w-10 h-10',
-        },
-      }}
-      afterSignOutUrl="/"
-    />
   )
 } 

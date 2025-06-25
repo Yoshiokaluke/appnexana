@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +41,7 @@ export function DateSelect({ value, onChange, defaultYear = 1997 }: DateSelectPr
     } else {
       onChange(undefined);
     }
-  }, [year, month, day, onChange]);
+  }, [year, month, day]);
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -64,43 +66,46 @@ export function DateSelect({ value, onChange, defaultYear = 1997 }: DateSelectPr
   };
 
   return (
-    <div className="flex flex-col gap-2 items-start">
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs">年</Label>
+    <div className="flex w-full items-start gap-2">
+      <div className="flex-1 space-y-1.5">
+        <Label htmlFor="year" className="text-xs">年</Label>
         <Input
+          id="year"
           type="text"
           inputMode="numeric"
           pattern="\d*"
           placeholder="1997"
           value={year}
           onChange={handleYearChange}
-          className="w-16"
+          className="w-full"
           maxLength={4}
         />
       </div>
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs">月</Label>
+      <div className="w-20 space-y-1.5">
+        <Label htmlFor="month" className="text-xs">月</Label>
         <Input
+          id="month"
           type="text"
           inputMode="numeric"
           pattern="\d*"
           placeholder="01"
           value={month}
           onChange={handleMonthChange}
-          className="w-12"
+          className="w-full"
           maxLength={2}
         />
       </div>
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs">日</Label>
+      <div className="w-20 space-y-1.5">
+        <Label htmlFor="day" className="text-xs">日</Label>
         <Input
+          id="day"
           type="text"
           inputMode="numeric"
           pattern="\d*"
           placeholder="01"
           value={day}
           onChange={handleDayChange}
-          className="w-12"
+          className="w-full"
           maxLength={2}
         />
       </div>

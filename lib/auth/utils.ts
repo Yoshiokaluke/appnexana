@@ -33,7 +33,7 @@ export async function getOrganizationMembership(userId: string, organizationId: 
   try {
     const membership = await prisma.organizationMembership.findFirst({
       where: {
-        userId,
+        clerkId: userId,
         organizationId
       }
     })
@@ -100,7 +100,7 @@ export async function withOrganizationAdminAuth(organizationId: string, handler:
 
     const membership = await prisma.organizationMembership.findFirst({
       where: {
-        userId,
+        clerkId: userId,
         organizationId,
         role: 'admin'
       }
@@ -114,7 +114,153 @@ export async function withOrganizationAdminAuth(organizationId: string, handler:
   })
 }
 
-// 例: /api/organization/[organizationId]/departments/route.ts
+// 組織メンバー一覧を取得
+export async function getOrganizationMembers(organizationId: string) {
+  try {
+    const members = await prisma.organizationMembership.findMany({
+      where: {
+        organizationId
+      },
+      include: {
+        user: {
+          include: {
+            organizationProfiles: {
+              where: {
+                organizationId
+              },
+              include: {
+                organizationDepartment: true
+              }
+            },
+            profile: true
+          }
+        }
+      }
+    })
+
+    return members.map(membership => {
+      const organizationProfile = membership.user.organizationProfiles[0];
+      return {
+        clerkId: membership.clerkId,
+        firstName: membership.user.firstName,
+        lastName: membership.user.lastName,
+        email: membership.user.email,
+        profileImage: organizationProfile?.profileImage || null,
+        displayName: organizationProfile?.displayName || null,
+        introduction: organizationProfile?.introduction || null,
+        organizationDepartment: organizationProfile?.organizationDepartment || null,
+        updatedAt: organizationProfile?.updatedAt || membership.updatedAt
+      }
+    })
+  } catch (error) {
+    console.error('Error getting organization members:', error)
+    return []
+  }
+}
+
+// 組織プロフィールを取得
+export async function getOrganizationProfile(clerkId: string, organizationId: string) {
+  try {
+    const profile = await prisma.organizationProfile.findUnique({
+      where: {
+        clerkId_organizationId: {
+          clerkId,
+          organizationId
+        }
+      },
+      include: {
+        organizationDepartment: true
+      }
+    })
+
+    return profile
+  } catch (error) {
+    console.error('Error getting organization profile:', error)
+    return null
+  }
+}
+
+// ユーザープロフィールを取得
+export async function getUserProfile(clerkId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: {
+        profile: true
+      }
+    })
+
+    if (!user) return null
+
+    return {
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      birthday: user.profile?.birthday,
+      gender: user.profile?.gender,
+      snsLinks: user.profile?.snsLinks,
+      companyName: user.profile?.companyName,
+      departmentName: user.profile?.departmentName
+    }
+  } catch (error) {
+    console.error('Error getting user profile:', error)
+    return null
+  }
+}
+
+// 組織メンバーアクセス権限をチェック
+export async function checkOrganizationMemberAccess(organizationId: string, clerkId: string) {
+  try {
+    // システムチームメンバーは全権限
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { systemRole: true }
+    })
+
+    if (user?.systemRole === 'system_team') {
+      return true
+    }
+
+    // 同じorganizationIdのメンバーかチェック
+    const membership = await prisma.organizationMembership.findFirst({
+      where: {
+        clerkId,
+        organizationId
+      }
+    })
+
+    return !!membership
+  } catch (error) {
+    console.error('Error checking organization member access:', error)
+    return false
+  }
+}
+
+// 現在のユーザーを取得
+export async function getCurrentUser() {
+  try {
+    const { userId } = await auth()
+    if (!userId) return null
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: {
+        clerkId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        systemRole: true
+      }
+    })
+
+    return user
+  } catch (error) {
+    console.error('Error getting current user:', error)
+    return null
+  }
+}
+
+// 例: /api/organizations/[organizationId]/departments/route.ts
 export async function GET(req: NextRequest, { params }: { params: { organizationId: string } }) {
   const { organizationId } = params;
   const user = await getAuthenticatedUser();

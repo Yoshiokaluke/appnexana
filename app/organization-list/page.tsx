@@ -90,18 +90,25 @@ export default function OrganizationListPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">ワークスペースを選択</h1>
+      <div className="mb-8">
+        <div className="flex items-center gap-3">
+          <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 21V7a2 2 0 012-2h2a2 2 0 012 2v14M7 21V7m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2m0 0v14m0 0V7m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2m0 0v14" /></svg>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">ワークスペースを選択</h1>
+        </div>
+        <div className="h-1 w-20 bg-blue-100 rounded mt-2 mb-2" />
+      </div>
       {organizations.length === 0 ? (
         <p className="text-gray-600">所属している組織がありません</p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {organizations.map((org) => (
             <button
               key={org.id}
               onClick={() => router.push(`/organization/${org.id}`)}
-              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left"
+              className="group p-6 bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:scale-[1.03] transition-all duration-200 flex flex-col items-center text-center cursor-pointer"
             >
-              <h2 className="font-semibold">{org.name}</h2>
+              <svg className="w-10 h-10 text-blue-400 mb-2 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 21V7a2 2 0 012-2h2a2 2 0 012 2v14M7 21V7m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2m0 0v14m0 0V7m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2m0 0v14" /></svg>
+              <h2 className="font-semibold text-lg md:text-xl text-gray-800 group-hover:text-blue-700 break-words">{org.name}</h2>
             </button>
           ))}
         </div>

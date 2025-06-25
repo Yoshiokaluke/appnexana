@@ -80,8 +80,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
@@ -89,4 +87,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Clerk UserProfileのActive devicesセクションを非表示にする */
+.cl-internal-UserProfile .cl-internal-UserProfileSection[data-localization-key*="userProfile.activeDevices.title"] {
+  display: none !important;
+}
+
+/* Adminページ用のスタイル */
+.admin-layout header[data-regular-header] {
+  display: none !important;
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AuthError, logger } from '@/lib/auth/roles';
+import { AuthError } from '@/lib/auth/roles';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -26,10 +26,10 @@ export async function GET() {
       },
     });
 
-    logger.debug('システムチームメンバー一覧を取得しました');
+    console.log('システムチームメンバー一覧を取得しました');
     return NextResponse.json(members);
   } catch (error) {
-    logger.error('システムチームメンバーの取得に失敗しました:', error);
+    console.error('システムチームメンバーの取得に失敗しました:', error);
     return NextResponse.json(
       { error: AuthError.INTERNAL_ERROR.message },
       { status: AuthError.INTERNAL_ERROR.code }
@@ -58,18 +58,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    logger.debug(`システムチームメンバーを作成しました: ${member.clerkId}`);
+    console.log(`システムチームメンバーを作成しました: ${member.clerkId}`);
     return NextResponse.json(member, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.debug('バリデーションエラー:', error.format());
+      console.log('バリデーションエラー:', error.format());
       return NextResponse.json(
         { error: 'バリデーションエラー', details: error.format() },
         { status: 400 }
       );
     }
 
-    logger.error('システムチームメンバーの作成に失敗しました:', error);
+    console.error('システムチームメンバーの作成に失敗しました:', error);
     return NextResponse.json(
       { error: AuthError.INTERNAL_ERROR.message },
       { status: AuthError.INTERNAL_ERROR.code }

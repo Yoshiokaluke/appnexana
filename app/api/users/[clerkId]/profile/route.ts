@@ -1,37 +1,54 @@
-import { auth } from "@clerk/nextjs";
+import { auth, clerkClient } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { PrismaClient } from "@prisma/client";
-
-export const prismaDb = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  request: Request,
+  req: Request,
   { params }: { params: { clerkId: string } }
 ) {
   try {
-    const { userId } = auth();
-    if (!userId || userId !== params.clerkId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const { userId } = await auth();
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const user = await db.user.findUnique({
+    // URLからorganizationIdを取得
+    const url = new URL(req.url);
+    const organizationId = url.searchParams.get('organizationId');
+
+    if (!organizationId) {
+      return new NextResponse('Organization ID is required', { status: 400 });
+    }
+
+    // ユーザーがその組織のメンバーかどうかを確認
+    const membership = await prisma.organizationMembership.findUnique({
       where: {
-        clerkId: userId,
+        clerkId_organizationId: {
+          clerkId: userId,
+          organizationId,
+        },
       },
+    });
+
+    if (!membership) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: params.clerkId },
       include: {
         profile: true,
       },
     });
 
     if (!user) {
-      return new NextResponse("User not found", { status: 404 });
+      return new NextResponse('User not found', { status: 404 });
     }
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error("[PROFILE_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('Error in GET /api/users/[clerkId]/profile:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
@@ -52,11 +69,22 @@ export async function PATCH(
       email,
       gender,
       dateOfBirth,
+      birthday,
       snsLinks,
+      companyName,
+      departmentName,
     } = body;
 
+    // Clerkのユーザー情報を更新（氏名が提供されている場合）
+    if (firstName !== undefined || lastName !== undefined) {
+      await clerkClient.users.updateUser(userId, {
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+      });
+    }
+
     // トランザクションを使用して、UserとProfileの更新を同時に行う
-    const result = await db.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
         where: {
           clerkId: userId,
@@ -75,13 +103,17 @@ export async function PATCH(
         create: {
           clerkId: userId,
           gender,
-          birthday: dateOfBirth,
+          birthday: dateOfBirth || birthday,
           snsLinks,
+          companyName,
+          departmentName,
         },
         update: {
           gender,
-          birthday: dateOfBirth,
+          birthday: dateOfBirth || birthday,
           snsLinks,
+          companyName,
+          departmentName,
         },
       });
 
@@ -100,21 +132,30 @@ export async function POST(
   { params }: { params: { clerkId: string } }
 ) {
   try {
-    const { clerkId } = params;
-    const { birthday, gender, snsLinks } = await req.json();
+    const { userId } = auth();
+    if (!userId || userId !== params.clerkId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
-    const profile = await prismaDb.profile.upsert({
+    const { clerkId } = params;
+    const { birthday, gender, snsLinks, companyName, departmentName } = await req.json();
+
+    const profile = await prisma.profile.upsert({
       where: { clerkId },
       update: {
         birthday,
         gender,
         snsLinks,
+        companyName,
+        departmentName,
       },
       create: {
         clerkId,
         birthday,
         gender,
         snsLinks,
+        companyName,
+        departmentName,
       },
     });
 

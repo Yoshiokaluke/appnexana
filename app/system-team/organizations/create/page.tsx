@@ -15,7 +15,7 @@ export default function CreateOrganizationPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('/api/organizations', {
+      const response = await fetch('/api/system-team/organizations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
