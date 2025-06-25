@@ -14,7 +14,7 @@ export default function NexanaTeamPage() {
           NEXANA Team
         </h1>
         <p className="text-gray-600">
-          システムチーム専用ページvv
+          システムチーム専用ページ
         </p>
       </div>
     </div>
